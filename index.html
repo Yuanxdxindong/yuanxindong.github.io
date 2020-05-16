@@ -70,6 +70,50 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-比特币白皮书" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/yuanxindong.github.io/2020/05/17/%E6%AF%94%E7%89%B9%E5%B8%81%E7%99%BD%E7%9A%AE%E4%B9%A6/" class="article-date">
+  <time datetime="2020-05-16T17:58:07.000Z" itemprop="datePublished">2020-05-17</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/yuanxindong.github.io/2020/05/17/%E6%AF%94%E7%89%B9%E5%B8%81%E7%99%BD%E7%9A%AE%E4%B9%A6/">比特币白皮书</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        
+
+	<div class="row">
+    <embed src="https://bitcoin.org/files/bitcoin-paper/bitcoin_zh_cn.pdf" width="100%" height="550" type="application/pdf">
+	</div>
+
+
+
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://yuanxdxindong.github.io/yuanxindong.github.io/2020/05/17/%E6%AF%94%E7%89%B9%E5%B8%81%E7%99%BD%E7%9A%AE%E4%B9%A6/" data-id="cka9xswi40000on7v5s3mf3lc" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-比特币和区块链技术" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/yuanxindong.github.io/2020/05/17/%E6%AF%94%E7%89%B9%E5%B8%81%E5%92%8C%E5%8C%BA%E5%9D%97%E9%93%BE%E6%8A%80%E6%9C%AF/" class="article-date">
@@ -860,60 +904,6 @@
 
 
   
-    <article id="post-Java中是否直接可以使用enum进行传输" class="article article-type-post" itemscope itemprop="blogPost">
-  <div class="article-meta">
-    <a href="/yuanxindong.github.io/2020/05/17/Java%E4%B8%AD%E6%98%AF%E5%90%A6%E7%9B%B4%E6%8E%A5%E5%8F%AF%E4%BB%A5%E4%BD%BF%E7%94%A8enum%E8%BF%9B%E8%A1%8C%E4%BC%A0%E8%BE%93/" class="article-date">
-  <time datetime="2020-05-16T16:41:38.000Z" itemprop="datePublished">2020-05-17</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/yuanxindong.github.io/2020/05/17/Java%E4%B8%AD%E6%98%AF%E5%90%A6%E7%9B%B4%E6%8E%A5%E5%8F%AF%E4%BB%A5%E4%BD%BF%E7%94%A8enum%E8%BF%9B%E8%A1%8C%E4%BC%A0%E8%BE%93/">Java中是否直接可以使用enum进行传输</a>
-    </h1>
-  
-
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>我们在进行传输的时候 会有一些状态值，如Status为1代表删除，为0代表失败或者怎么样的。只传输一个）0或者1过去给第三方（此处不包括给前端），如果没有契约第三方会不认识你这个是什么意思，那我们在平时写业务逻辑的时候使用枚举很轻易就知道了什么状态什么值。所以我们在构建DTO对象的时候里面放一个枚举来表示。</p>
-<p>==首先在阿里的规范里是这样说的：<br>【强制】二方库里可以定义枚举类型，参数可以使用枚举类型，但是接口返回值不允许使用枚举类型或者包含枚举类型的 POJO 对象。==<br>那到底为啥不能用呢？</p>
-<h3 id="枚举"><a href="#枚举" class="headerlink" title="枚举"></a>枚举</h3><ol>
-<li>首先我们得先思考一下枚举是否可以进行序列化，我们在把对象进行传输的时候需要将这个对象序列化为字节序列进行传输（在linux中一切皆文件，JVM虚拟机将对象变为字节给到内核通过传输协议进行打包传）枚举在进行编译后会生成一个相关的类，这个类，这个类继承了JavaAPI中的java.lang.Enum类。那么我们看看这个类，毫无疑问可以序列化。继承了Serializable接口。那么就肯定就是可以序列化了。<br><img src="https://img-blog.csdnimg.cn/20200510224623419.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><h3 id="Enum实战序列化"><a href="#Enum实战序列化" class="headerlink" title="Enum实战序列化"></a>Enum实战序列化</h3><ol>
-<li>创建一个枚举类<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">package SerializableEnum;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * @Author:yuanxindong</span><br><span class="line"> * @Date:2020&#x2F;5&#x2F;101:33</span><br><span class="line"> *&#x2F;</span><br><span class="line">public enum PersonEnum &#123;</span><br><span class="line">    &#x2F;**</span><br><span class="line">     * 小圆</span><br><span class="line">     *&#x2F;</span><br><span class="line">    YUANXINDONG(&quot;yuanxindong&quot;,1);</span><br><span class="line"></span><br><span class="line">    ;</span><br><span class="line">    private String age;</span><br><span class="line">    private int i;</span><br><span class="line"></span><br><span class="line">    PersonEnum(String yuanxindong, int i) &#123;</span><br><span class="line">        this.age &#x3D; yuanxindong;</span><br><span class="line">        this.i &#x3D; i;</span><br><span class="line">    &#125;&#125;</span><br></pre></td></tr></table></figure>
-
-</li>
-</ol>
-</li>
-</ol>
-<p>2.将枚举类放入Person对象，通过本地序列化存入target文件夹中，再进行反序列化，读取查看枚举的值</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line">package SerializableEnum;</span><br><span class="line"></span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.FileOutputStream;</span><br><span class="line">import java.io.IOException;</span><br><span class="line">import java.io.ObjectInputStream;</span><br><span class="line">import java.io.ObjectOutputStream;</span><br><span class="line">import java.io.Serializable;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * @Author:yuanxindong</span><br><span class="line"> * @Date:2020&#x2F;5&#x2F;101:31</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class Person implements Serializable &#123;</span><br><span class="line">    private String name;</span><br><span class="line">    PersonEnum a;</span><br><span class="line"></span><br><span class="line">    public void setName(String name) &#123;</span><br><span class="line">        this.name &#x3D; name;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setA(PersonEnum a) &#123;</span><br><span class="line">        this.a &#x3D; a;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public String getName() &#123;</span><br><span class="line">        return name;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public PersonEnum getA() &#123;</span><br><span class="line">        return a;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public String toString() &#123;</span><br><span class="line">        return &quot;Person&#123;&quot; +</span><br><span class="line">                &quot;name&#x3D;&#39;&quot; + name + &#39;\&#39;&#39; +</span><br><span class="line">                &quot;, a&#x3D;&quot; + a +</span><br><span class="line">                &#39;&#125;&#39;;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws IOException, ClassNotFoundException &#123;</span><br><span class="line">        ObjectOutputStream oos &#x3D; new ObjectOutputStream(new FileOutputStream(&quot;object.txt&quot;));</span><br><span class="line">        Person p &#x3D; new Person();</span><br><span class="line">        p.setA(PersonEnum.YUANXINDONG);</span><br><span class="line">        p.setName(&quot;小圆&quot;);</span><br><span class="line">        oos.writeObject(p);</span><br><span class="line"></span><br><span class="line">        ObjectInputStream ois &#x3D; new ObjectInputStream(new FileInputStream(&quot;D:\\workCode\\票税助手\\aresV3\\springCodestudy\\object.txt&quot;));</span><br><span class="line">        Person brady &#x3D; (Person) ois.readObject();</span><br><span class="line">        brady.getA();</span><br><span class="line"></span><br><span class="line">        System.out.println(brady);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<ol start="3">
-<li>执行结果：<br><img src="https://img-blog.csdnimg.cn/20200510224703819.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>但是在控制台输出的对象是枚举的命名，没有枚举中的值，这时为什么呢？<h1 id=""><a href="#" class="headerlink" title=""></a><img src="https://img-blog.csdnimg.cn/2020051022481480.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></h1>我用的是aliFastJson转还为JsonObject的我们看看他里面的实现。只是拿了对应枚举的name（感觉是个坑啊），这也阿里规范中不能使用枚举放在DTO的原因之一吧==<br><img src="https://img-blog.csdnimg.cn/20200510224846409.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>上面的内容整明了枚举是可以进行序列化的，是可以被传输的，他的实现也是通过类来实现的，除了fastJSON那一步，使用都没有问题的。<h3 id="其他角度考虑"><a href="#其他角度考虑" class="headerlink" title="其他角度考虑"></a>其他角度考虑</h3></li>
-</ol>
-<p><strong>借鉴知乎</strong></p>
-<p><em>使用枚举的确会带来扩展兼容性的问题，这点很多答主都说的很好了，我就说一下为什么参数上可以使用枚举的原因吧。咱们先假定对枚举的扩展只是新增值，而不是减少值。比如说性别中本来是男和女，现在要增加一个transgender, 但我们极少极少会有需求说，把性别中的已有男或者女去掉。（我觉得这个假设是参数可以使用枚举型的前提）在这个假定下如果我们在接口中使用枚举型，如孤尽兄在java开发手册中所述，分为参数和返回值两种情况。不管是微服务之间的互相调用，还是手机客户端到服务器的调用，在不停机的情况下，服务器端和客户端是很难一起更新的，往往我们是服务器端先来支持新feature，然后再来逐步更新客户端。我想孤尽兄说参数可以使用枚举型，也是基于这种更新升级方式。因为服务器端如果突然开始返回transgender这个新性别，客户端吃不进去（反序列化不了），客户端就炸了。但如果服务器端只是在参数上开始接受新性别，那就不怕老客户端，反正老客户端还在那里继续发送男和女这两种性别，服务器端都认识，就不会出错。两边可以一直相安无事，慢慢等所有客户端都升级。但是呢，如果我们用string来代替枚举，服务器端贸然返回一个新的值，客户端不知道怎么处理，也可能会产生其他问题，比如说钱算错了之类业务层面的问题。所以客户端代码可能要先更新一点，让其能处理这个新的值。我觉得阿里把这个标准放在手册里，也是多年的经验教训，两害相权取其轻吧。因为很多应用是没法强制客户端一起更新的。尤其是手机移动客户端，ios可能还要审核，很难做到客户端和服务器端同步更新。如果是微服务，也很难在不停机的情况下，把通过枚举耦合两个微服务一起更新。</em></p>
-<h3 id="看完大佬的说法个人感觉："><a href="#看完大佬的说法个人感觉：" class="headerlink" title="看完大佬的说法个人感觉："></a>看完大佬的说法个人感觉：</h3><p>是的你在一个项目中维护是没有什么问题。但是多个项目使用同一个枚举怎么搞。要么这个枚举一处动即全动。所有的项目使用这一个枚举。比如说全公司有一个通用的发票类型枚举，有几个状态值代表一钟发票类型，于是这个枚举维护到公共配置上，通过动态加载技术，在每次发布或者有修改的时候进行动态加载。感觉同完美。小白的YY。落地难吗？？试一试。后面更新.</p>
-
-      
-    </div>
-    <footer class="article-footer">
-      <a data-url="https://yuanxdxindong.github.io/yuanxindong.github.io/2020/05/17/Java%E4%B8%AD%E6%98%AF%E5%90%A6%E7%9B%B4%E6%8E%A5%E5%8F%AF%E4%BB%A5%E4%BD%BF%E7%94%A8enum%E8%BF%9B%E8%A1%8C%E4%BC%A0%E8%BE%93/" data-id="cka9uyxlt0000j47v2pgycmye" class="article-share-link">Share</a>
-      
-      
-    </footer>
-  </div>
-  
-</article>
-
-
-  
 
 
   <nav id="page-nav">
@@ -950,6 +940,10 @@
       <ul>
         
           <li>
+            <a href="/yuanxindong.github.io/2020/05/17/%E6%AF%94%E7%89%B9%E5%B8%81%E7%99%BD%E7%9A%AE%E4%B9%A6/">比特币白皮书</a>
+          </li>
+        
+          <li>
             <a href="/yuanxindong.github.io/2020/05/17/%E6%AF%94%E7%89%B9%E5%B8%81%E5%92%8C%E5%8C%BA%E5%9D%97%E9%93%BE%E6%8A%80%E6%9C%AF/">比特币和区块链技术</a>
           </li>
         
@@ -963,10 +957,6 @@
         
           <li>
             <a href="/yuanxindong.github.io/2020/05/17/mysql%E4%B8%ADchar%E5%92%8Cvarchar/">mysql中char和varchar</a>
-          </li>
-        
-          <li>
-            <a href="/yuanxindong.github.io/2020/05/17/JVM%E7%BA%BF%E4%B8%8A%E5%86%85%E5%AD%98%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/">JVM线上内存问题排查</a>
           </li>
         
       </ul>
