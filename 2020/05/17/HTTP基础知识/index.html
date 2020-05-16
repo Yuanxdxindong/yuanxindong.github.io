@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>HTTP基础知识 | Welcome to Jeff&#39;s blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="HTTP概述web浏览器，服务器和相关的web的应用程序都是通过HTTP进行通信交互的，http是现代全球因特网中使用的公共语言。http 使用的是 可靠地数据传输协议，因此即时数据来自地球的另一端，他也能够确保数据在传输的过程中不会被损坏。 1. HTTP中的名词1. Web客户端和服务器我们平常使用的就是浏览器就是web客户端，问客户端的信息来源那就是服务器，平时所说的应用程序就是在服务器上部">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HTTP基础知识">
+<meta property="og:url" content="https://yuanxdxindong.github.io/yuanxindong.github.io/2020/05/17/HTTP%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/index.html">
+<meta property="og:site_name" content="Welcome to Jeff&#39;s blog">
+<meta property="og:description" content="HTTP概述web浏览器，服务器和相关的web的应用程序都是通过HTTP进行通信交互的，http是现代全球因特网中使用的公共语言。http 使用的是 可靠地数据传输协议，因此即时数据来自地球的另一端，他也能够确保数据在传输的过程中不会被损坏。 1. HTTP中的名词1. Web客户端和服务器我们平常使用的就是浏览器就是web客户端，问客户端的信息来源那就是服务器，平时所说的应用程序就是在服务器上部">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200412153804619.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200412153841968.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200412153910899.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200412153932200.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta property="article:published_time" content="2020-05-16T17:27:03.000Z">
+<meta property="article:modified_time" content="2020-05-16T17:27:19.001Z">
+<meta property="article:author" content="yuanxindong">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20200412153804619.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+  
+    <link rel="alternate" href="/yuanxindong.github.io/atom.xml" title="Welcome to Jeff&#39;s blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/yuanxindong.github.io/css/style.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/yuanxindong.github.io/" id="logo">Welcome to Jeff&#39;s blog</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/yuanxindong.github.io/" id="subtitle">study&amp;Live</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/yuanxindong.github.io/">Home</a>
+        
+          <a class="main-nav-link" href="/yuanxindong.github.io/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/yuanxindong.github.io/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://yuanxdxindong.github.io/yuanxindong.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-HTTP基础知识" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/yuanxindong.github.io/2020/05/17/HTTP%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" class="article-date">
+  <time datetime="2020-05-16T17:27:03.000Z" itemprop="datePublished">2020-05-17</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      HTTP基础知识
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="HTTP概述"><a href="#HTTP概述" class="headerlink" title="HTTP概述"></a>HTTP概述</h1><p>web浏览器，服务器和相关的web的应用程序都是通过HTTP进行通信交互的，http是现代全球因特网中使用的公共语言。<br>http 使用的是 可靠地数据传输协议，因此即时数据来自地球的另一端，他也能够确保数据在传输的过程中不会被损坏。</p>
+<h2 id="1-HTTP中的名词"><a href="#1-HTTP中的名词" class="headerlink" title="1. HTTP中的名词"></a>1. HTTP中的名词</h2><h3 id="1-Web客户端和服务器"><a href="#1-Web客户端和服务器" class="headerlink" title="1. Web客户端和服务器"></a>1. Web客户端和服务器</h3><p>我们平常使用的就是浏览器就是web客户端，问客户端的信息来源那就是服务器，平时所说的应用程序就是在服务器上部署，好比微博，微博上的照片等资源就是从服务器来的。<br><img src="https://img-blog.csdnimg.cn/20200412153804619.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h3 id="2-媒体类型"><a href="#2-媒体类型" class="headerlink" title="2. 媒体类型"></a>2. 媒体类型</h3><p>客户端通过http请求服务端，会请求不同的资源，如视频，音频等等文件，所以http都为需要在web传书的资源都打上了类型，使用MIME的数据格式标签，打标记。这个标记一般都会存储在我们的首部（后面会讲到）</p>
+<h3 id="3-资源"><a href="#3-资源" class="headerlink" title="3. 资源"></a>3. 资源</h3><p>web服务器是web资源的宿主，http是Web服务器和web客户端中间的媒介，资源的类型有很多种，包括我们所部属的应用程序列如jar包，或者是。class文件等等</p>
+<h3 id="3-URI"><a href="#3-URI" class="headerlink" title="3. URI"></a>3. URI</h3><p>每一个web服务器都有一个名字，这样客户端就知道他要的资源是什么，即URL uniform Resource Identifier 统一资源标识符。列如 <a href="https://blog.csdn.net/weixin_40413961/article/details/105398407" target="_blank" rel="noopener">https://blog.csdn.net/weixin_40413961/article/details/105398407</a> 这个地址就是我博客的URI ，URI是怎样只是HTTP协议去访问我的博客资源的，给定了URI，就可以HTTP就可以解析出对象。URI 有两种形式分别为URL 和 URN </p>
+<h3 id="4-URL"><a href="#4-URL" class="headerlink" title="4. URL"></a>4. URL</h3><ol>
+<li>URL是统一资源的定位符，是资源标识符最常见的形式，URL描述了一台特定的服务器上的特定资源。他可以明确地从固定的位获取资源。</li>
+<li>URL的组成：  </li>
+</ol>
+<ul>
+<li>url的第一部分是HTTP 说明访问资源所使用的协议</li>
+<li>blog.csdn.net给出服务器的因特网地址</li>
+<li>其余的部分就制定了web服务器上的资源路径<br>现在几乎所有的URI搜使用的是URL <h3 id="5-URN"><a href="#5-URN" class="headerlink" title="5. URN"></a>5. URN</h3></li>
+</ul>
+<p>1.URN是代表的是某个资源，也就他叫做统一资源名 就举个例子：苹果在哪里都是苹果，只要你用苹果这个统一资源名就会获取到苹果（假如世界上的苹果都一样的前提下）无论你的苹果放在哪里，且可以通过任何的途径拿到。</p>
+<h3 id="6-事务"><a href="#6-事务" class="headerlink" title="6. 事务"></a>6. 事务</h3><ol>
+<li>http 的事务有一条请求命令（游客户端发往服务器）和响应结果组成（服务器发往客户端的）。这种通信是通过名为HTTP报文的的格式化数据块进行的 <h3 id="7-方法"><a href="#7-方法" class="headerlink" title="7. 方法"></a>7. 方法</h3></li>
+<li>HTTP支持几种不同的HTTP请求命令，这些命令被称为HTTP方法，每一条HTTP报文都包含一个HTTP方法。这些方法会告诉HTTP服务器需要执行什么动作（但是服务器内的应用程序到底是如何执行的我们并不知道，列如我们请求的是get 但是，我们在代码里面处理的时候是删除） ，</li>
+<li>7种HTTP方法： </li>
+</ol>
+<ul>
+<li>GET: GET通常用于请求服务器资源，HTTP/1.1是要求服务器实现此方法<br>  GET和HEAD是HTTP方法中的安全方法，因为他两被赋予的意义是获取资源而不是去更改资源，所以说的安全的。注意：但是这里的安全仅仅是所有的开发遵循规则的情况下。就如我肯上面所提到的请求的是GET但是服务器的应用程序执行了删除操作。那这肯定就不安全了。</li>
+<li>HEAD: HEAD 的请求方式和GET 的行为很类似，但是服务器在响应中只返回首部。不会返回实体的主体部分。他和GET的区别就是一个会返回实体一个不会返回实体</li>
+<li>POST：POST语法的定义是向服务器输入数据的，实际上，通常会用他来支持HTML的表单，表单一半填好数据会发送给服务器，服务器会将他发送到他要去的地方，可以是网关等地方，然后由应用程序去处理</li>
+<li>DELETE： 顾名思义那就是URL请求的资源进行删除，客户端的应用程序无法保证程序一定执行，因为HTTP规范语序服务在不通知客户端的情况下撤销删除。</li>
+<li>OPTIONS： 此方法在我们的平时编程种感觉是很少使用的，此方法的语法意思是请求WEB服务器告知其支持的各种功能。可以询问服务器都支持哪些方法。 </li>
+<li>PUT： put语法的定义就是根据HTTP报文中的主体部分来创建一个由所请求的UR命名的新文档，或者这个URL已经存在就用这个主题来替代它。因为PUT会修改资源，所以很多WEB服务器都要求执行PUT之前，用密码登录。</li>
+<li>TRACE： 当客户端发起一个请求的时候，这个请求有可能穿越防火墙，网关 ，代理等一些应用服务（列如一些回调服务）等，每一个中间节点都会对 hTTP报文进行修改。TRACE方法允许客户端在最终请求发送给服务器时，看看它变成了什么样子。TRACE请求会在目的服务器短发一个环回的诊断，行程最后的一站的服务器会返回一条 TRACE响应，并在响应的主体中返回接收到的请求报文。 <h3 id="8-状态码"><a href="#8-状态码" class="headerlink" title="8. 状态码"></a>8. 状态码</h3></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>状态码</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>100 -199</td>
+<td>信息状态码</td>
+</tr>
+<tr>
+<td>200-299</td>
+<td>成功状态码</td>
+</tr>
+<tr>
+<td>300-399</td>
+<td>重定向资源码</td>
+</tr>
+<tr>
+<td>400-499</td>
+<td>客户端错误状态码</td>
+</tr>
+<tr>
+<td>500-599</td>
+<td>服务端错误状态吗</td>
+</tr>
+<tr>
+<td>### 9. 报文</td>
+<td></td>
+</tr>
+<tr>
+<td>1. 报文可以分为： 请求报文和响应报文</td>
+<td></td>
+</tr>
+<tr>
+<td>1. 报文的组成是：起始行， 首部，主体。</td>
+<td></td>
+</tr>
+<tr>
+<td>2. 请求报文和响应报文的区别是？</td>
+<td></td>
+</tr>
+<tr>
+<td><img src="https://img-blog.csdnimg.cn/20200412153841968.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></td>
+<td></td>
+</tr>
+<tr>
+<td>3. 起始行可以分为两种：请求行和响应行两者的区别和组成如上图，不做赘述、请求行的其他组成：</td>
+<td></td>
+</tr>
+<tr>
+<td>- 方法</td>
+<td></td>
+</tr>
+<tr>
+<td>- 状态码</td>
+<td></td>
+</tr>
+<tr>
+<td>- 原因短语</td>
+<td></td>
+</tr>
+<tr>
+<td>- HTTP版本号</td>
+<td></td>
+</tr>
+<tr>
+<td>4. 首部：</td>
+<td></td>
+</tr>
+<tr>
+<td>- 通用首部</td>
+<td></td>
+</tr>
+<tr>
+<td>- 请求首部</td>
+<td></td>
+</tr>
+<tr>
+<td>- 响应首部</td>
+<td></td>
+</tr>
+<tr>
+<td>- 实体首部 说明实体的内部</td>
+<td></td>
+</tr>
+<tr>
+<td>- 扩展首部</td>
+<td></td>
+</tr>
+<tr>
+<td>### 10. 连接</td>
+<td></td>
+</tr>
+<tr>
+<td>1. HTTP权威指南：“世界上几乎所有的HTTP通信都是通过TCP/IP承载的，TCP/IP是全球计算机及网络设备都是在使用的一种常用的分组交换网络协议集”那就是HTTP的连接是由TCP来进行的。</td>
+<td></td>
+</tr>
+<tr>
+<td>2. TCP提供可靠的数据管道，http连接实际上就是TCP连接及使用规则，TCP为HTTP提供可靠地比特传输管道，从TCP连接一段填入数据会从另一端有序的，正确得传送出来。</td>
+<td></td>
+</tr>
+<tr>
+<td>3. TCP流是分段的，是由IP分组传送的 。HTTP 要传输一条报文的时候，会以流的形式通过一条打开的TCP管道有序传输。TCP收到数据流，将流砍成被称作段的小数据块，并将段封装在IP分组里，通过因特网进行传输。这些操作都是通过TCP/IP软件来处理的。每一个TCP分段都是有IP分组来承担，从一个ip地址发送到另一个IP地址。我们可以类比一下快递公司，两个城市的派发中心就是TCP 其中运输的车就是IP 快递（一批快递）就是HTTP报文 两个城市的派发中心建立连接后，将其快递封装在一辆辆的车里然后通过两个快递派发中心制定的路线管道有序正确的运输到目的地</td>
+<td></td>
+</tr>
+<tr>
+<td><img src="https://img-blog.csdnimg.cn/20200412153910899.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></td>
+<td></td>
+</tr>
+<tr>
+<td>4. TCP保持连接持续不断的运行，在计算机中在任意时刻都会有几条TCP连接处于打开状态。TCP是通过端口号 来保持所有的这些连接不断地运行</td>
+<td></td>
+</tr>
+<tr>
+<td>5. 使用TCP的套接字去编程，我们在写Java的时候操作协同会给我们提供操作TCP的API。这就是SOCKET套接字API这个API 移隐藏了TCP 和IP的所有细节。具体过程</td>
+<td></td>
+</tr>
+<tr>
+<td><img src="https://img-blog.csdnimg.cn/20200412153932200.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></td>
+<td></td>
+</tr>
+<tr>
+<td>### 11. TCP 性能考虑</td>
+<td></td>
+</tr>
+<tr>
+<td>1. HTTP紧挨着TCP，位于其上层，所以HTTP事务的性能在很大程度取决于底层TCP的性能</td>
+<td></td>
+</tr>
+<tr>
+<td>HTTP事务请求的过程中出现网络延时</td>
+<td></td>
+</tr>
+</tbody></table>
+<p>1）客户端解析URI，找到对应的IP地址和端口号。如果本地缓存有就会节约很多的时间，如果本地没有就会就进去DNS获取这个时间回达到数10秒</p>
+<p> 2）客户端会发起TCP连接请求，并等待服务器返回一个接收链接的应答。这个请求回达到1到2S</p>
+<p>3） 一旦连接建立起来吗，客户端就会通过新建立的TCP管道来发送HTTP请求数据到达后就会对其中的请求报文进行处理。在进行处理也是会耗时的，主要是是取决于HTTP服务器的应用程序的性能。</p>
+<p>4）web服务器响应 回送HTTP响应。也是耗时的 </p>
+<p>TCP网络延时的大小取决于硬件速度，网络和服务器的负载，请求和响应报文的尺寸，以及客户端介服务短的距离。<br>2. TCP的性能聚焦</p>
+<ul>
+<li>TCP连接建立握手： 在TCP建立连接的时候 会进行一些数据的确认和沟通，而达到确认建立连接（三次握手）。如果这次连接传入少量的得数据的话，这个建立连接的过程会严重降低HTTP的性能。<br>TCP三次握手和四次挥手：<a href="https://blog.csdn.net/weixin_40413961/article/details/105397536" target="_blank" rel="noopener">https://blog.csdn.net/weixin_40413961/article/details/105397536</a></li>
+<li>延时确认： 由于因特网自己无法保证数据的可靠传输所以TCP担任其这一重任，在每次传输完IP分组到目标地址的时候都会向发送端返回一个确认报文，由于报文很小，所以TCP允许在发往允许在发往相同方向的输出数据进行捎带。所以就有了延迟算法。将这个确认报文存放在本地的缓存里面，如果有回去的数据就将缓存里里面的报文稍待返回，100——200MS内没有的话，就单独返回确认报文</li>
+<li>TCP慢启动拥塞控制 ：TCP 数据的传输的性能还取决于TCp连接的使用期.tcp连接会随着时间进行自我调谐，起处会限制连接的最大速度，如果数据传输成功了，会随着时间得推移，提高传输速度 。这种调节被称为TCP的慢启动用于因特网的突然过载和拥塞</li>
+<li>数据聚集Nagle算法 ： TCP 有一个数据流入口应用程序可以将任意的尺寸的大小的数据放入TCP栈中，既是一次放入一个字节也是可以的。但是每每一个每个TCP段中都至少装载了40个字节的标记和首部。所以TCP发送大量包含少量数据的分组，网络的性能就会严重下降。nagle算法就是在发送一个分组之前，将大量的TCP 数据绑定在一起以提高网络的效率。NElage算法会因为小的HTTP报文无法填满一个分组，可能会因为等待那些永远不会到来的额外数据而产生时延。因为需要将小的数据聚合起来一块的发送所以就是阻止HTTP报文的发送。这也就会影像http的传输</li>
+<li>TIME—_WAIT时延和端口耗尽: 在TCP端点关闭TCP链接的时候，会在内存中维护一个小的控制块，用来记录最近关闭的IP地址和端口号，这类信息只会维护一短时间（2MSL 为两分钟），以确保在这段时间内不会重复的去创建相同的地址和端口号。由于现在高速路由一般会把2MSL调到特别小，就会 出现一些性能问题具体的说法可看点击-&gt;。（<a href="https://blog.csdn.net/u010585120/article/details/80826999）" target="_blank" rel="noopener">https://blog.csdn.net/u010585120/article/details/80826999）</a><br>参考 ：HTTP权威指南</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://yuanxdxindong.github.io/yuanxindong.github.io/2020/05/17/HTTP%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" data-id="cka9wnu4m0004d67vc30h66yl" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/yuanxindong.github.io/2020/05/17/%E6%AF%94%E7%89%B9%E5%B8%81%E5%92%8C%E5%8C%BA%E5%9D%97%E9%93%BE%E6%8A%80%E6%9C%AF/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          比特币和区块链技术
+        
+      </div>
+    </a>
+  
+  
+    <a href="/yuanxindong.github.io/2020/05/17/ThreadPoolExcutor%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">ThreadPoolExcutor源码分析</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/yuanxindong.github.io/archives/2020/05/">五月 2020</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/yuanxindong.github.io/2020/05/17/%E6%AF%94%E7%89%B9%E5%B8%81%E5%92%8C%E5%8C%BA%E5%9D%97%E9%93%BE%E6%8A%80%E6%9C%AF/">比特币和区块链技术</a>
+          </li>
+        
+          <li>
+            <a href="/yuanxindong.github.io/2020/05/17/HTTP%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/">HTTP基础知识</a>
+          </li>
+        
+          <li>
+            <a href="/yuanxindong.github.io/2020/05/17/ThreadPoolExcutor%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">ThreadPoolExcutor源码分析</a>
+          </li>
+        
+          <li>
+            <a href="/yuanxindong.github.io/2020/05/17/mysql%E4%B8%ADchar%E5%92%8Cvarchar/">mysql中char和varchar</a>
+          </li>
+        
+          <li>
+            <a href="/yuanxindong.github.io/2020/05/17/JVM%E7%BA%BF%E4%B8%8A%E5%86%85%E5%AD%98%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/">JVM线上内存问题排查</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 yuanxindong<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/yuanxindong.github.io/" class="mobile-nav-link">Home</a>
+  
+    <a href="/yuanxindong.github.io/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/yuanxindong.github.io/fancybox/jquery.fancybox.css">
+
+  
+<script src="/yuanxindong.github.io/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/yuanxindong.github.io/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>

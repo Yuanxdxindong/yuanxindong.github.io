@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>请分清楚Java内存区域和Java内存模型 | Welcome to Jeff&#39;s blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="java内存区域是java虚拟机在执行java程序的时候会把它所管理的内存进行划分不同的数据区域。但是java内存模型是为了屏蔽各种硬件和操作系统的内存访问的差异，已实现java程序在不同的操作系统中都能达到一致的访问效果 Java内存区域1. 线程共享区：  堆：堆可分为eden区和survior to和survior from 区 刚创建的对象，且堆内存够放下这个对象，都会放在eden区。 方">
+<meta property="og:type" content="article">
+<meta property="og:title" content="请分清楚Java内存区域和Java内存模型">
+<meta property="og:url" content="https://yuanxdxindong.github.io/yuanxindong.github.io/2020/05/17/%E8%AF%B7%E5%88%86%E6%B8%85%E6%A5%9AJava%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E5%92%8CJava%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/index.html">
+<meta property="og:site_name" content="Welcome to Jeff&#39;s blog">
+<meta property="og:description" content="java内存区域是java虚拟机在执行java程序的时候会把它所管理的内存进行划分不同的数据区域。但是java内存模型是为了屏蔽各种硬件和操作系统的内存访问的差异，已实现java程序在不同的操作系统中都能达到一致的访问效果 Java内存区域1. 线程共享区：  堆：堆可分为eden区和survior to和survior from 区 刚创建的对象，且堆内存够放下这个对象，都会放在eden区。 方">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200504003454150.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200504003626339.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta property="article:published_time" content="2020-05-16T17:14:49.000Z">
+<meta property="article:modified_time" content="2020-05-16T17:15:12.464Z">
+<meta property="article:author" content="yuanxindong">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20200504003454150.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+  
+    <link rel="alternate" href="/yuanxindong.github.io/atom.xml" title="Welcome to Jeff&#39;s blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/yuanxindong.github.io/css/style.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/yuanxindong.github.io/" id="logo">Welcome to Jeff&#39;s blog</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/yuanxindong.github.io/" id="subtitle">study&amp;Live</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/yuanxindong.github.io/">Home</a>
+        
+          <a class="main-nav-link" href="/yuanxindong.github.io/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/yuanxindong.github.io/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://yuanxdxindong.github.io/yuanxindong.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-请分清楚Java内存区域和Java内存模型" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/yuanxindong.github.io/2020/05/17/%E8%AF%B7%E5%88%86%E6%B8%85%E6%A5%9AJava%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E5%92%8CJava%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="article-date">
+  <time datetime="2020-05-16T17:14:49.000Z" itemprop="datePublished">2020-05-17</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      请分清楚Java内存区域和Java内存模型
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p><strong>java内存区域是java虚拟机在执行java程序的时候会把它所管理的内存进行划分不同的数据区域</strong>。<br><strong>但是java内存模型是为了屏蔽各种硬件和操作系统的内存访问的差异，已实现java程序在不同的操作系统中都能达到一致的访问效果</strong></p>
+<h2 id="Java内存区域"><a href="#Java内存区域" class="headerlink" title="Java内存区域"></a>Java内存区域</h2><p><strong>1. 线程共享区</strong>：</p>
+<ul>
+<li>堆：堆可分为eden区和survior to和survior from 区 刚创建的对象，且堆内存够放下这个对象，都会放在eden区。</li>
+<li>方法区： 存储已经被加载的类信息，常量，静态变量，即时编译后的代码等数据。在hotspot虚拟机中方法区也被称为老年代。</li>
+</ul>
+<p><strong>2. 线程独享区</strong></p>
+<ul>
+<li>Java虚拟机栈：在我们代码在运行是调用一个方法就会创建一个栈帧用于存储局部变量表，动态链接，操作数栈，方法出口等。调用方法的过程也就是压栈和弹栈的过程，栈的数据结构是先进后出的我们可以想一下主方法调用其他方法，其他方法调用完成那其他的方法就弹栈了谈完后其以及已经将动态链接的数据已经改变，于是你的主方法内的数据也随即改变。仔细品品。</li>
+<li>本地方发栈： 本地方法栈和Java虚拟机栈的作用类似，Java虚拟机栈是为java方法的使用而执行的，但是本地方法栈是为了Java虚拟机调用的native方法执行的。正是因为本地方法栈不会限制使用的语言，使用的方法还有数据结构。</li>
+<li>程序计数器：粗糙一点也就是为了记录代码执行到那一块了。还有就是我们在执行多线程的时候，在虚拟机中并不是所谓的同步执行的，而是通过线程的切换并分配处理器的时间的方式来实现的，所以在切换的过程中有的线程执行了一半，又切换到了其他线程那就得将其字节码指令执行到那一块就得记录下来，这也是程序计数器为什么是私有的原因。</li>
+</ul>
+<p><strong>3. 直接内存</strong>（非Java虚拟机中运行时动态区域，但是也会引起OOM）<br><img src="https://img-blog.csdnimg.cn/20200504003454150.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="\[外链图片转存失败,源站可能有防盗链机制,建议将图片保存下来直接上传(img-MSDffKes-1588523651379)(47A49CD3238948398729B5DD70C4D87F)\]"></p>
+<ul>
+<li>直接内存并不属于JVM动态运行时区域，我们在使用NIO的时候基于通道与缓冲区的方式（buffer）的I/O的方式，他可以使用native函数库直接分配堆外内存 ，然后通过存储在Java堆种的dirctyByteBuffer对象作为这块堆内存的一面用进行操作。<h2 id="java内存模型"><a href="#java内存模型" class="headerlink" title="java内存模型"></a>java内存模型</h2></li>
+</ul>
+<ol>
+<li>Java的内存模型重要的目标是定义程序中的各个变量的访问规则。即在虚拟机中将变量存储到内存和从内存中取出变量这样的底层细节。此处变量只是针对全局变量和静态字段，和构成数组的对象元素。</li>
+<li>Java的内存模型分为 主内存，工作内存。</li>
+</ol>
+<ul>
+<li>工作内存：每一个线程都拥有自己的工作内存，工作内存保存的是从主内存复制拷贝过来的副本,不同的线程之间是不可以直接进行工作内存的访问，必须通过主内存作为中间人才可以访问。</li>
+<li>主内存：主内存就用来存放所有的公共变量。线程间可以共享的变量。</li>
+<li>Java内存模型和Java运行时动态内存模型类比的话，那么主内存就是其Java堆中的那些对象实例，而工作内存区域就是Java虚拟机栈中的局部变量表还有refrence所指向的数据，还有方法参数等。<br><img src="https://img-blog.csdnimg.cn/20200504003626339.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><h3 id="思考一下"><a href="#思考一下" class="headerlink" title="思考一下"></a>思考一下</h3></li>
+</ul>
+<p><strong>volatile关键字是如何达到变量在各个线程间是可见的呢？</strong></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://yuanxdxindong.github.io/yuanxindong.github.io/2020/05/17/%E8%AF%B7%E5%88%86%E6%B8%85%E6%A5%9AJava%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E5%92%8CJava%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" data-id="cka9w7lhe00014k7vd5c94160" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/yuanxindong.github.io/2020/05/17/JVM%E7%BA%BF%E4%B8%8A%E5%86%85%E5%AD%98%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          JVM线上内存问题排查
+        
+      </div>
+    </a>
+  
+  
+    <a href="/yuanxindong.github.io/2020/05/17/%E5%BE%AE%E8%A7%82%E7%BB%8F%E6%B5%8E%E5%AD%A6%E5%92%8C%E5%AE%8F%E8%A7%82%E7%BB%8F%E6%B5%8E%E5%AD%A6/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">微观经济学和宏观经济学</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/yuanxindong.github.io/archives/2020/05/">五月 2020</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/yuanxindong.github.io/2020/05/17/%E6%AF%94%E7%89%B9%E5%B8%81%E5%92%8C%E5%8C%BA%E5%9D%97%E9%93%BE%E6%8A%80%E6%9C%AF/">比特币和区块链技术</a>
+          </li>
+        
+          <li>
+            <a href="/yuanxindong.github.io/2020/05/17/HTTP%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/">HTTP基础知识</a>
+          </li>
+        
+          <li>
+            <a href="/yuanxindong.github.io/2020/05/17/ThreadPoolExcutor%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">ThreadPoolExcutor源码分析</a>
+          </li>
+        
+          <li>
+            <a href="/yuanxindong.github.io/2020/05/17/mysql%E4%B8%ADchar%E5%92%8Cvarchar/">mysql中char和varchar</a>
+          </li>
+        
+          <li>
+            <a href="/yuanxindong.github.io/2020/05/17/JVM%E7%BA%BF%E4%B8%8A%E5%86%85%E5%AD%98%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/">JVM线上内存问题排查</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 yuanxindong<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/yuanxindong.github.io/" class="mobile-nav-link">Home</a>
+  
+    <a href="/yuanxindong.github.io/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/yuanxindong.github.io/fancybox/jquery.fancybox.css">
+
+  
+<script src="/yuanxindong.github.io/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/yuanxindong.github.io/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>
