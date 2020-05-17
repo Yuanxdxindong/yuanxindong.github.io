@@ -70,6 +70,142 @@
       <div class="outer">
         <section id="main">
   
+    <article id="post-阿里代码规约为什么不让使用Executors包装好线程池呢" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/yuanxindong.github.io/2020/05/17/%E9%98%BF%E9%87%8C%E4%BB%A3%E7%A0%81%E8%A7%84%E7%BA%A6%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E8%AE%A9%E4%BD%BF%E7%94%A8Executors%E5%8C%85%E8%A3%85%E5%A5%BD%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%91%A2/" class="article-date">
+  <time datetime="2020-05-16T17:09:33.000Z" itemprop="datePublished">2020-05-17</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/yuanxindong.github.io/2020/05/17/%E9%98%BF%E9%87%8C%E4%BB%A3%E7%A0%81%E8%A7%84%E7%BA%A6%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E8%AE%A9%E4%BD%BF%E7%94%A8Executors%E5%8C%85%E8%A3%85%E5%A5%BD%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%91%A2/">阿里代码规约为什么不让使用Executors包装好线程池呢</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h4 id="在Executors下主要有5个静态方法："><a href="#在Executors下主要有5个静态方法：" class="headerlink" title="在Executors下主要有5个静态方法："></a>在Executors下主要有5个静态方法：</h4><p><strong>1. Executors.newWorkStealingPool</strong></p>
+<ul>
+<li>JDK8引入，创建持有足够线程的线程池支持给定的并行度，并通过使用多个队列减少竞争，此构造方法把CPU数量设置为默认的并行度</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">public ForkJoinPool(int parallelism,</span><br><span class="line">                    ForkJoinWorkerThreadFactory factory,</span><br><span class="line">                    UncaughtExceptionHandler handler,</span><br><span class="line">                    boolean asyncMode) &#123;</span><br><span class="line">    this(checkParallelism(parallelism),</span><br><span class="line">         checkFactory(factory),</span><br><span class="line">         handler,</span><br><span class="line">         asyncMode ? FIFO_QUEUE : LIFO_QUEUE,</span><br><span class="line">         &quot;ForkJoinPool-&quot; + nextPoolId() + &quot;-worker-&quot;);</span><br><span class="line">    checkPermission();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>2. Executors.newCacheThreadPool</strong></p>
+<ul>
+<li>这个线程池是一个没有核心线程数的，且最大线程数是Integer.MAX_VALUE，且使用的队列是SynchronousQueue，这个队列有点反人类，他不存储元素的阻塞队列，在创建元素的时候每一个put操作必须等待take操作，否则就不能添加元素 。这样我们就知道了因为没有核心线程数，所以刚来的任务我们都会进入到队列中，但是这个队列没有take也不会put，此时那就是说队列满了，然后就创建最大线程数。且设置的最大线程数在空闲状态下的存活时间为60秒。当有线程闲下来的时候，如果有新的任务来的时候就是用空闲线程，但是有可能出现瞬间来了大量的请求，此时就会无限创建线程直到Integer.MAX_VALUE个线程，很多机器应该在没有达到之前就会OOM了。创建一个线程就会分配堆，本地方法栈，java虚拟机栈等。所以就很容易就OOM了<br><img src="https://img-blog.csdnimg.cn/20200505224941972.png" alt="在这里插入图片描述"></li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public static ExecutorService newCachedThreadPool() &#123;</span><br><span class="line">        return new ThreadPoolExecutor(0, Integer.MAX_VALUE,</span><br><span class="line">                                      60L, TimeUnit.SECONDS,</span><br><span class="line">                                      new SynchronousQueue&lt;Runnable&gt;());</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>3. Executors.newScheduledThreadPool</strong></p>
+<ul>
+<li>线程数最大到Integer.MAX_VALUE,与上面所说的一样都有可能会OOM，他是ScheduledExecutorService接口家族的实现类，支持定时及周期性任务执行。与newCacheThreadPool的区别就是不回收工作线程。从下面代码可以看出到最后也是使用了ThreadPoolExcutor这个类然定义了对应对参数。如设置了最大线程数的存活时间是0秒。<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">public static ScheduledExecutorService newScheduledThreadPool(int corePoolSize) &#123;</span><br><span class="line">    return new ScheduledThreadPoolExecutor(corePoolSize);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public ScheduledThreadPoolExecutor(int corePoolSize) &#123;</span><br><span class="line">    super(corePoolSize, Integer.MAX_VALUE, 0, NANOSECONDS,</span><br><span class="line">          new DelayedWorkQueue());</span><br><span class="line">&#125;</span><br><span class="line">    public ThreadPoolExecutor(int corePoolSize,</span><br><span class="line">                          int maximumPoolSize,</span><br><span class="line">                          long keepAliveTime,</span><br><span class="line">                          TimeUnit unit,</span><br><span class="line">                          BlockingQueue&lt;Runnable&gt; workQueue) &#123;</span><br><span class="line">    this(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue,</span><br><span class="line">         Executors.defaultThreadFactory(), defaultHandler);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+</li>
+</ul>
+<p><strong>4. Executors.newSingleThreadExecutor</strong></p>
+<ul>
+<li>创建一个单线程的的线程池，相当于单线程串行执行任务，保证按任务的提交顺序依次执行。这个线程池虽然不会因为线程创建过多而oom但是会因为阻塞到队列而最后产生oom，因为他使用的是LinkedBlockingQueue 看源码我们可知他的最大长度也是Integer.MAX_VALUE，所以大量任務的提交也会导致OOM。<br><img src="https://img-blog.csdnimg.cn/20200505225000397.png" alt="在这里插入图片描述"></li>
+</ul>
+<p>源码： </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public static ExecutorService newSingleThreadExecutor() &#123;</span><br><span class="line">    return new FinalizableDelegatedExecutorService</span><br><span class="line">        (new ThreadPoolExecutor(1, 1,</span><br><span class="line">                                0L, TimeUnit.MILLISECONDS,</span><br><span class="line">                                new LinkedBlockingQueue&lt;Runnable&gt;()));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>5. Executors.newFixedThreadPool</strong></p>
+<ul>
+<li>输入的参数即是固定的线程数，即是核心的线程数也是最大的线程数，不存在空闲线程</li>
+<li>看下面的源码我们可知最大线程数和核心线程数是相等的，也就可说只有核心线程数，我们都知道如果核心线程数没有特定的配置的话核心线程数一旦创建就不会被回收的。但是我们可以看到他使用的也是LinkedBlockingQueue且默认的大小为Integer.MAX_VALUE，所以也会OOM。<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public static ExecutorService newFixedThreadPool(int nThreads) &#123;</span><br><span class="line">    return new ThreadPoolExecutor(nThreads, nThreads,</span><br><span class="line">                                  0L, TimeUnit.MILLISECONDS,</span><br><span class="line">                                  new LinkedBlockingQueue&lt;Runnable&gt;());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="其实看了上面的Excutors的五个方法后，在阿里规约里面时不可以使用除第一个外的四个包内线程的，因为他们都会引起OOM。"><a href="#其实看了上面的Excutors的五个方法后，在阿里规约里面时不可以使用除第一个外的四个包内线程的，因为他们都会引起OOM。" class="headerlink" title="其实看了上面的Excutors的五个方法后，在阿里规约里面时不可以使用除第一个外的四个包内线程的，因为他们都会引起OOM。"></a>其实看了上面的Excutors的五个方法后，在阿里规约里面时不可以使用除第一个外的四个包内线程的，因为他们都会引起OOM。</h3><h3 id="从源码我们可以看出都是有ThreadPoolExcutor这个类传入不同的参数而实现的所以说只要我们搞懂其中传入的7个参数的含义，就可以大概搞懂线程池的冰山一角了"><a href="#从源码我们可以看出都是有ThreadPoolExcutor这个类传入不同的参数而实现的所以说只要我们搞懂其中传入的7个参数的含义，就可以大概搞懂线程池的冰山一角了" class="headerlink" title="==从源码我们可以看出都是有ThreadPoolExcutor这个类传入不同的参数而实现的所以说只要我们搞懂其中传入的7个参数的含义，就可以大概搞懂线程池的冰山一角了=="></a>==从源码我们可以看出都是有ThreadPoolExcutor这个类传入不同的参数而实现的所以说只要我们搞懂其中传入的7个参数的含义，就可以大概搞懂线程池的冰山一角了==</h3><img src="https://img-blog.csdnimg.cn/20200505224911619.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://yuanxdxindong.github.io/yuanxindong.github.io/2020/05/17/%E9%98%BF%E9%87%8C%E4%BB%A3%E7%A0%81%E8%A7%84%E7%BA%A6%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E8%AE%A9%E4%BD%BF%E7%94%A8Executors%E5%8C%85%E8%A3%85%E5%A5%BD%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%91%A2/" data-id="cka9w7lhf00024k7v94d48xcr" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
+    <article id="post-day01" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/yuanxindong.github.io/2020/05/17/day01/" class="article-date">
+  <time datetime="2020-05-16T16:59:36.000Z" itemprop="datePublished">2020-05-17</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/yuanxindong.github.io/2020/05/17/day01/">中流砥柱java的动态代理</a>
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>在我们学习Spring框架的时候我们是否思考过，Spring是如何实现bean实列注入到IOC容器中呢？我们如何去</p>
+<h3 id="权威指南"><a href="#权威指南" class="headerlink" title="权威指南"></a>权威指南</h3><p>代理是基本的设计模式之一，他是为了提供额外的或不同的操作，而插入的用来代替“实际”对象的对象。这些操作通常涉及与“实际”对象的通信，因此代理通常充当着中间人的角色。<br>Java的动态代理比代理的思想更迈进了一步，因为他可以动态地创建代理并动态的处理对所代理的方法的调用。在动态代理上所做的所有调用都会被重定向到单一的调用处理器上，他的工作是揭示调用的类型并确定相应的对策。      ——-《ThinKing in Java》</p>
+<h3 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h3><ul>
+<li><strong>类比生活</strong><br>代理，平时生活中代理无处不在，如手机生产商的代理商A，A不仅能帮忙给生产商卖手机而且也提供了售后功能。代码中被代理对象就是生产商，而代理商A就是代理对象，可以做生产商的事情，为了方便客户还提供了售后的功能。但是此时这个生产商不固定，且随时会变，且为了利益最大化，那个生产商拿货便宜，就拿谁的货，就在这个时候我们是不是就得成为一个动态代理商？这样就可以方便用户，还能和生产商解耦合。</li>
+<li>抽象层面<br>将一个对象被另一个对象代理，代理对象可以扩展被代理对象的方法，且能在被代理对象对象增加方法。这样实现好之后我们所代理的对象会在编译和累加载之后将带代理对象和被代理对象绑定到一块了。为了让代理更加方便和实用于是就得出了动态代理，也就是再程序运行时可以根据被代理对象生成代理对象。（在java中反射机制就是可以让代码进行动态加载和生成对象）<h3 id="jdk动态代理"><a href="#jdk动态代理" class="headerlink" title="jdk动态代理"></a>jdk动态代理</h3></li>
+</ul>
+<ol>
+<li>JDK的动态代理也就是基于Java的反射机制实现的。</li>
+<li>我们先来看一下Java中的动态代理在代码中是如何实现的： </li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">package dynamicproxy;</span><br><span class="line"></span><br><span class="line">import java.lang.reflect.*;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * @Author:yuanxindong</span><br><span class="line"> * @Date:2020&#x2F;5&#x2F;90:53</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class Client &#123;</span><br><span class="line">    public static void main(String[] args) throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException &#123;</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F;实例化一个对象</span><br><span class="line">        &#x2F;&#x2F;分别分为两种方事实现的，一个是直接new 关键字创建一个对象，</span><br><span class="line">        &#x2F;&#x2F; 第二种是通过反射机制穿件一个对象</span><br><span class="line">        &#x2F;&#x2F;UserServiceImpl userServiceLmpl &#x3D; new UserServiceImpl();</span><br><span class="line">        &#x2F;&#x2F;1。 读取加载&quot;dynamicproxy.UserServiceImpl&quot;路径下的class对象</span><br><span class="line">        Class aClass &#x3D; Class.forName(&quot;dynamicproxy.UserServiceImpl&quot;);</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F;使用class对象中的方法获取父类加载器</span><br><span class="line">        &#x2F;&#x2F;ClassLoader classLoader &#x3D; userServiceLmpl.getClass().getClassLoader();</span><br><span class="line">        ClassLoader classLoader &#x3D; aClass.getClassLoader();</span><br><span class="line">        &#x2F;&#x2F;Class []  interfaces &#x3D; userServiceLmpl.getClass().getInterfaces();</span><br><span class="line">        &#x2F;&#x2F;获取实现class实现的接口</span><br><span class="line">        Class[] interfaces &#x3D; aClass.getInterfaces();</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F;获取这个类的、构造方法</span><br><span class="line">        Constructor constructors &#x3D; aClass.getConstructor();</span><br><span class="line">        &#x2F;&#x2F;通过构造方法 去实例化这个对象</span><br><span class="line">        UserServiceImpl userServiceLmpl &#x3D; (UserServiceImpl) constructors.newInstance();</span><br><span class="line">        &#x2F;&#x2F;将获取到的对象传入对应的处理器上，通过反射的方式拿到对应的方法切织入</span><br><span class="line">        InvocationHandler logHandler &#x3D; new LogHandler(userServiceLmpl);</span><br><span class="line">        &#x2F;&#x2F;创建动态代理对象的接口</span><br><span class="line">        UserService proxy &#x3D; (UserService) Proxy.newProxyInstance(classLoader, interfaces, logHandler);</span><br><span class="line"></span><br><span class="line">        proxy.select();</span><br><span class="line">        proxy.update();</span><br><span class="line">        ProxyUtils.generateClassFile(userServiceLmpl.getClass(), &quot;UserServiceProxy&quot;);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>被代理的对象</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;**</span><br><span class="line"> * @Author:yuanxindong</span><br><span class="line"> * @Date:2020&#x2F;5&#x2F;90:56</span><br><span class="line"> *&#x2F;</span><br><span class="line">public interface UserService &#123;</span><br><span class="line">    public void select();</span><br><span class="line">    public void update();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">package dynamicproxy;</span><br><span class="line"></span><br><span class="line">import java.lang.reflect.InvocationHandler;</span><br><span class="line">import java.lang.reflect.Method;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * @Author:yuanxindong</span><br><span class="line"> * @Date:2020&#x2F;5&#x2F;90:47</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class LogHandler  implements InvocationHandler &#123;</span><br><span class="line">    private Object  target;</span><br><span class="line">    &#x2F;&#x2F;使用构造方法将代理对象传入代理对象</span><br><span class="line">    public LogHandler(Object target)&#123;</span><br><span class="line">        this.target &#x3D; target;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F;通过反射的方式执行并织入（不知道用的是否合理）代理方法，这个接口实现方法会被newProxyInstance（）方法使用</span><br><span class="line">    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable &#123;</span><br><span class="line">        before();</span><br><span class="line">        &#x2F;&#x2F;</span><br><span class="line">        Object  result  &#x3D; method.invoke(target,args);</span><br><span class="line">        after();</span><br><span class="line">        return result;</span><br><span class="line">    &#125;</span><br><span class="line">    private void before()&#123;</span><br><span class="line">        System.out.println(&quot;log start&quot;+ System.currentTimeMillis());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private  void after()&#123;</span><br><span class="line">        System.out.println(&quot;log end&quot; + System.currentTimeMillis());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>执行结果：<br><img src="https://img-blog.csdnimg.cn/20200515015828273.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h3 id="demo中的InvocationHandler"><a href="#demo中的InvocationHandler" class="headerlink" title="demo中的InvocationHandler"></a>demo中的InvocationHandler</h3><ol>
+<li>从demo中看我们将代理对象的其他方法是在实现InvocationHandler的类中写的，通过实现的invoke（）方法将被代理类织入代理类的方法中 然后在newProxyInstance（）方法中实例化这个 invoke（）方法成为代理对象。如下面的源码所示：<br><img src="https://img-blog.csdnimg.cn/2020051501585994.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3>jdk的动态代理通过Java反射机制实现<br>主要的方法是：</li>
+</ol>
+<ul>
+<li>实现被代理的方法：继承InvocationHandler接口 实现其invoke方法</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">InvocationHandler logHandler &#x3D; new LogHandler(userServiceLmpl);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>使用Proxy.newProxyInstance(classLoader, interfaces, logHandler)，创建代理对象。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">UserService proxy &#x3D; (UserService) Proxy.newProxyInstance(classLoader, interfaces, logHandler);</span><br></pre></td></tr></table></figure>
+
+<h3 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h3><ul>
+<li>Spring AOP是怎样实现的呢？？ 也是像我们上面的方法那样织入的吗？？？</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://yuanxdxindong.github.io/yuanxindong.github.io/2020/05/17/day01/" data-id="cka9vmw1b0000t57v2k9ubhq9" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+</article>
+
+
+  
     <article id="post-Java中是否直接可以使用enum进行传输" class="article article-type-post" itemscope itemprop="blogPost">
   <div class="article-meta">
     <a href="/yuanxindong.github.io/2020/05/17/Java%E4%B8%AD%E6%98%AF%E5%90%A6%E7%9B%B4%E6%8E%A5%E5%8F%AF%E4%BB%A5%E4%BD%BF%E7%94%A8enum%E8%BF%9B%E8%A1%8C%E4%BC%A0%E8%BE%93/" class="article-date">
@@ -226,6 +362,14 @@
       <ul>
         
           <li>
+            <a href="/yuanxindong.github.io/2020/05/17/%E4%BB%A5%E6%AD%A3%E7%A1%AE%E5%A7%BF%E5%8A%BF%E7%90%86%E8%A7%A3%E5%8C%BA%E5%9D%97%E9%93%BE%E6%8A%80%E6%9C%AF%EF%BC%9F/">以正确姿势理解区块链技术？</a>
+          </li>
+        
+          <li>
+            <a href="/yuanxindong.github.io/2020/05/17/%E4%B8%AA%E4%BA%BA%E7%AE%80%E5%8E%86/">个人简历</a>
+          </li>
+        
+          <li>
             <a href="/yuanxindong.github.io/2020/05/17/%E6%AF%94%E7%89%B9%E5%B8%81%E7%99%BD%E7%9A%AE%E4%B9%A6/">比特币白皮书</a>
           </li>
         
@@ -235,14 +379,6 @@
         
           <li>
             <a href="/yuanxindong.github.io/2020/05/17/HTTP%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/">HTTP基础知识</a>
-          </li>
-        
-          <li>
-            <a href="/yuanxindong.github.io/2020/05/17/ThreadPoolExcutor%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">ThreadPoolExcutor源码分析</a>
-          </li>
-        
-          <li>
-            <a href="/yuanxindong.github.io/2020/05/17/mysql%E4%B8%ADchar%E5%92%8Cvarchar/">mysql中char和varchar</a>
           </li>
         
       </ul>
