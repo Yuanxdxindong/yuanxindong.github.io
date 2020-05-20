@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>520初始MongoDB | Welcome to Jeff&#39;s blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="背景 由于我们在开发的过程中难免会遇到数据库选型的问题，那么数据库的选型那我们必须通过结合我们的业务场景还有他们的设计初衷，及各自在各个方面的优势。现在我们就在业务开发中遇到了选择 mongoDB还时MYsql。之前没有怎么了解过mongoDB，那今天就开始我的mongoDB第一步。 设计的初衷建立一种灵活，高效，易于扩展，功能完备的数据库。 1. 丰富的数据模型 mongo是面向文档的数据库，为">
+<meta property="og:type" content="article">
+<meta property="og:title" content="520初始MongoDB">
+<meta property="og:url" content="https://yuanxdxindong.github.io/yuanxindong.github.io/2020/05/21/520%E5%88%9D%E5%A7%8BMongoDB/index.html">
+<meta property="og:site_name" content="Welcome to Jeff&#39;s blog">
+<meta property="og:description" content="背景 由于我们在开发的过程中难免会遇到数据库选型的问题，那么数据库的选型那我们必须通过结合我们的业务场景还有他们的设计初衷，及各自在各个方面的优势。现在我们就在业务开发中遇到了选择 mongoDB还时MYsql。之前没有怎么了解过mongoDB，那今天就开始我的mongoDB第一步。 设计的初衷建立一种灵活，高效，易于扩展，功能完备的数据库。 1. 丰富的数据模型 mongo是面向文档的数据库，为">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-05-20T18:08:42.000Z">
+<meta property="article:modified_time" content="2020-05-20T18:13:22.370Z">
+<meta property="article:author" content="yuanxindong">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/yuanxindong.github.io/atom.xml" title="Welcome to Jeff&#39;s blog" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/yuanxindong.github.io/css/style.css">
+
+<meta name="generator" content="Hexo 4.2.1"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/yuanxindong.github.io/" id="logo">Welcome to Jeff&#39;s blog</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/yuanxindong.github.io/" id="subtitle">study&amp;Live</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/yuanxindong.github.io/">Home</a>
+        
+          <a class="main-nav-link" href="/yuanxindong.github.io/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/yuanxindong.github.io/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="搜索"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://yuanxdxindong.github.io/yuanxindong.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-520初始MongoDB" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/yuanxindong.github.io/2020/05/21/520%E5%88%9D%E5%A7%8BMongoDB/" class="article-date">
+  <time datetime="2020-05-20T18:08:42.000Z" itemprop="datePublished">2020-05-21</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      520初始MongoDB
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p> 由于我们在开发的过程中难免会遇到数据库选型的问题，那么数据库的选型那我们必须通过结合我们的业务场景还有他们的设计初衷，及各自在各个方面的优势。现在我们就在业务开发中遇到了选择 mongoDB还时MYsql。之前没有怎么了解过mongoDB，那今天就开始我的mongoDB第一步。</p>
+<h2 id="设计的初衷"><a href="#设计的初衷" class="headerlink" title="设计的初衷"></a>设计的初衷</h2><p>建立一种灵活，高效，易于扩展，功能完备的数据库。</p>
+<h2 id="1-丰富的数据模型"><a href="#1-丰富的数据模型" class="headerlink" title="1. 丰富的数据模型"></a>1. 丰富的数据模型</h2><ul>
+<li>mongo是面向文档的数据库，为了获得更好的扩展性采用的不是关系型数据库，使用一条记录就可以表示非常复杂的层次关系</li>
+<li>没有固定的模式，文档的键值可以在应用层进行自己处理<h2 id="2-容易扩展"><a href="#2-容易扩展" class="headerlink" title="2. 容易扩展"></a>2. 容易扩展</h2></li>
+<li>由于大数据时代的来临，开发者遇到的问题就是如何扩展数据库。一般的关系性数据库做拓展最简单的方式也就是分库分表等，但是mongo采用的是文档模式可以自动在多台服务器间进行分割数据。还可以自动平衡负载和自动重排文档等<h2 id="3-丰富的功能"><a href="#3-丰富的功能" class="headerlink" title="3. 丰富的功能"></a>3. 丰富的功能</h2></li>
+<li>索引<br>  1.拥有铺筑索引，能进行多种快速查询，也提供唯一的，复合的和地理空间索引能力</li>
+<li>存储JavaScript</li>
+<li>聚合 MapReduce和其他聚合工具</li>
+<li>固定集合 集合的大小是有上限的</li>
+<li>文件存储 存储大型文件和文件元数据<br>但是也有关系数据库中的功能不具备，那就是join查询，和多行事物。mongo的架构是为了提高性能和扩展性，但是这两个功能很难在一个分布式系统上实现。<h2 id="4-不牺牲速度"><a href="#4-不牺牲速度" class="headerlink" title="4. 不牺牲速度"></a>4. 不牺牲速度</h2>mongo的主要目标是卓越的性能，使用的传输协议是自己的传输协议作为服务器间交互的主要方式，他对文档进行动态填充，将内存管理工作交给操作系统去处理动态查询优化器会记住执行查询最高效的方式，也将类似于关系型数据库中的一部分业务交给了客户端去处理。<h2 id="5-简便的管理"><a href="#5-简便的管理" class="headerlink" title="5.简便的管理"></a>5.简便的管理</h2>MonogDB尽量让服务器自治来简化数据库的管理。除了启动就再也没有什，么需要管理的地方了。如果有节点挂掉，mongo会自动去切换到从节点的机器上。 mongo的管理理念是尽可能的让服务器进行自动配置，让用户在需要时候调整设置。<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2>所有新事物的产生，都会有产生的原因，mongo也不列外，硬件水平提升，大数据时代的到来，关系型数据库出现暴露出了自己的性能瓶颈，如：全文检索导致数据响应时间慢，数据模型的固定导致业务修改成本高等等。mongo通过牺牲关系型数据库中部分功能（事物，join关联）来提高数据库的灵活性和高效性。及支持自动分区，提高数据库的扩展性</li>
+</ul>
+<h2 id="想一下和mysql关系型数据库的区别？-mysql的优势是什么呢？"><a href="#想一下和mysql关系型数据库的区别？-mysql的优势是什么呢？" class="headerlink" title="想一下和mysql关系型数据库的区别？ mysql的优势是什么呢？"></a>想一下和mysql关系型数据库的区别？ mysql的优势是什么呢？</h2>
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://yuanxdxindong.github.io/yuanxindong.github.io/2020/05/21/520%E5%88%9D%E5%A7%8BMongoDB/" data-id="ckafo01d80000ti7vfl9652rd" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/yuanxindong.github.io/2020/05/19/%E5%A4%8D%E7%9B%98/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">复盘</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/yuanxindong.github.io/archives/2020/05/">五月 2020</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/yuanxindong.github.io/2020/05/21/520%E5%88%9D%E5%A7%8BMongoDB/">520初始MongoDB</a>
+          </li>
+        
+          <li>
+            <a href="/yuanxindong.github.io/2020/05/19/%E5%A4%8D%E7%9B%98/">复盘</a>
+          </li>
+        
+          <li>
+            <a href="/yuanxindong.github.io/2020/05/18/spring-aop%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/">spring aop的实现原理</a>
+          </li>
+        
+          <li>
+            <a href="/yuanxindong.github.io/2020/05/17/%E4%BB%A5%E6%AD%A3%E7%A1%AE%E5%A7%BF%E5%8A%BF%E7%90%86%E8%A7%A3%E5%8C%BA%E5%9D%97%E9%93%BE%E6%8A%80%E6%9C%AF%EF%BC%9F/">以正确姿势理解区块链技术？</a>
+          </li>
+        
+          <li>
+            <a href="/yuanxindong.github.io/2020/05/17/%E6%AF%94%E7%89%B9%E5%B8%81%E7%99%BD%E7%9A%AE%E4%B9%A6/">比特币白皮书</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 yuanxindong<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/yuanxindong.github.io/" class="mobile-nav-link">Home</a>
+  
+    <a href="/yuanxindong.github.io/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/yuanxindong.github.io/fancybox/jquery.fancybox.css">
+
+  
+<script src="/yuanxindong.github.io/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/yuanxindong.github.io/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>
