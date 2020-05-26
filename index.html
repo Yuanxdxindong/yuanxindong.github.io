@@ -150,6 +150,110 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-秒懂Java并发和线程安全" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/05/27/%E7%A7%92%E6%87%82Java%E5%B9%B6%E5%8F%91%E5%92%8C%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/">秒懂Java并发和线程安全</a>
+    </h1>
+  
+
+        
+        <a href="/2020/05/27/%E7%A7%92%E6%87%82Java%E5%B9%B6%E5%8F%91%E5%92%8C%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/" class="archive-article-date">
+  	<time datetime="2020-05-26T17:13:34.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-27</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>在平时写代码的时候我们经常会说“这会不会有线程安全问题，是不是得加把锁呢？”，细细的品一下这句话，是包涵很多知识点在里面。线程？，线程安全？，什么时候才会出现线程安全？Java中的锁？ 等等。</p>
+<h3 id="知识点"><a href="#知识点" class="headerlink" title="知识点"></a>知识点</h3><h4 id="什么是线程？"><a href="#什么是线程？" class="headerlink" title="什么是线程？"></a>什么是线程？</h4><ol>
+<li>”线程是承载代码运行的载体“ 这是我脑子里飘出来的第一句话。</li>
+<li>看看WIKI百科是如何讲的： <em>线程（英语：thread）是操作系统能够进行运算调度的最小单位。大部分情况下，它被包含在进程之中，是进程中的实际运作单位。一条线程指的是进程中一个单一顺序的控制流，一个进程中可以并发多个线程，每条线程并行执行不同的任务。在Unix System V及SunOS中也被称为轻量进程（lightweight processes），但轻量进程更多指内核线程（kernel thread），而把用户线程（user thread）称为线程。</em></li>
+<li>好像我说的也没什么毛病，再具体总结一下“线程是操作系统调度程序执行的最小单位，线程是包含在进程里的，一个进程可以包含多个线程”。<h4 id="什么是线程的并发和并行"><a href="#什么是线程的并发和并行" class="headerlink" title="什么是线程的并发和并行"></a>什么是线程的并发和并行</h4></li>
+<li>并发 ： 指在某个时间段内，多个任务交替处理的能力。每个CPU不可能只顾着执行某一个线程，而不管其他线程，导致其他线程一直处于等待状态。所以CPU把可执行的时间片段 均匀的分为若干份，每个线程执行一段时间后，记录当前的工作状态，释放相关的执行资源并进入等待状态，让其他线程抢占CPU资源。</li>
+<li>并行：并行是指同时处理多任务的能力，比如多个CPU同时执行多个任务。<br>其实我们也可以举个列子： KTV唱歌的时候一个话筒，一首歌，被大家轮流使用去唱，就是并发（只不过这个多成很快，完全柑桔不到），多个人同时去唱就是并行。</li>
+<li>Java中一个线程“朝生夕死”的过程<br><img src="https://img-blog.csdnimg.cn/20200527010751609.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><ul>
+<li>创建一个线程：有三种方法，1. 继承Thread的类 2.实现Runable接口 3.实现Callable接口</li>
+<li>调用我们继承或实现接口的方法调用start方法启动线程，此时线程处于就绪状态（RUNABLE）这个时候线程被再一次调用会跑出异常。</li>
+<li>接下来如果顺利的话会进入执行状态（RUNNING），也就是run（）方法被执行。但是不顺利的话就会属于阻塞状态。</li>
+<li>进入阻塞状态有这几种方式：<ol>
+<li>同步阻塞：锁被其他线程占用，</li>
+<li>主动阻塞： 调用Thread方法主动让出CPU的执行权，比如sleep（），join（）等</li>
+<li>等待阻塞： 执行了wait（）<ul>
+<li>终止状态（DEAD），run（）执行结束，或者因异常推出后的状态，此状态不可逆转。</li>
+</ul>
+</li>
+</ol>
+</li>
+</ul>
+</li>
+<li>在并发环境下会导致哪些问题呢？<ul>
+<li>那就是在线程之间操作一个共享变量的时候会出现程序预期之外的结果。这也就是线程的安全问题</li>
+<li>WIKI对线程安全的描述：<em>“线程安全是程式设计中的术语，指某个函数、函数库在多线程环境中被调用时，能够正确地处理多个线程之间的共享变量，使程序功能正确完成。”</em><h4 id="如何保证线程安全呢？"><a href="#如何保证线程安全呢？" class="headerlink" title="如何保证线程安全呢？"></a>如何保证线程安全呢？</h4></li>
+</ul>
+</li>
+<li>数据单线程内可见。单线程总是安全的。因为你只针对这个线程可见那么其他的线程对此参数做不了更改了。在我们平时在方法内定义的变量也就是局部变量，他就是安全的，局部变量会被存储在独立的虚拟机栈中的局部变量表中，虚拟机栈是在线程的私有区。所以与其他的线程是没有关联的。</li>
+<li>只读对象。那就是被定义为final的对象，且内部属性也得被定义为final不可变，一个对象被final修饰只是这个引用不会改变，但是内部的数据是可以改变的。所以内部属性也得被final修饰。如String，Integer等<br><img src="https://img-blog.csdnimg.cn/20200527010957535.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></li>
+<li>线程安全类。currentHashMap，HashTable，StringBuffer等买这些都是线程安全类其中内部方法都被加锁了。下图shihashTable的get方法 。currentHashMap采用的是分段锁hashTable的升级版。<br><img src="https://img-blog.csdnimg.cn/2020052701102862.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></li>
+<li>同步与锁机制。如果想要对某个对象进行并发操作，但是又不属于上述三类，那么我们开发就得自己去控制了，也是和他们类似的方式，让操作这个对象通过锁的方式同步执行。我们在日常开发中熟知的锁有两个<ul>
+<li>JUC 包中的sychronized，可重入锁，支持公平锁和公平锁。其内部实现是通过JUC包中的AQS，但是AQS中也使用到了JVM 的锁Sychronized。</li>
+<li>sychronized关键字是JVM底层实现的锁，在每一个对象都会有一个对象头，其中对象头中有几个字节专门表示对象的锁状态，在JDK1.6之前sychronized还是一个比较重量极的锁，但是后续进行了优化，就是锁拥有了几个状态，自旋锁，轻量级锁，重量级锁。使其效率提高了起来，且sychronized是非公平锁。<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
+<li>主要还是介绍了并发和Java中的线程，并发的概念，线程通过获取CPU的时间便进行交替执行的过程成为并发。并行就是真正的同时去执行几个线程。</li>
+<li>并发操作导致线程的安全问题，多个线程并发操作一个数据，导致数据出现程序执行意料之外的情况。</li>
+<li>防止线程安全的方式和现有方法或类。也就是两点“要么只读”和“要么加锁”。</li>
+<li>明天更新锁两把锁“sychronized”，“sychronized”的详细情况<h3 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h3>通过反射机制或字节码操纵技术会将不变的对象变化掉吗？</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/05/27/%E7%A7%92%E6%87%82Java%E5%B9%B6%E5%8F%91%E5%92%8C%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-final关键字你真的会用" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -1017,83 +1121,9 @@ private static class FooGuard implements Guard&lt;States, Events&gt; {
 
 
   
-    <article id="post-比特币和区块链技术" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/05/17/%E6%AF%94%E7%89%B9%E5%B8%81%E5%92%8C%E5%8C%BA%E5%9D%97%E9%93%BE%E6%8A%80%E6%9C%AF/">比特币和区块链技术</a>
-    </h1>
-  
-
-        
-        <a href="/2020/05/17/%E6%AF%94%E7%89%B9%E5%B8%81%E5%92%8C%E5%8C%BA%E5%9D%97%E9%93%BE%E6%8A%80%E6%9C%AF/" class="archive-article-date">
-  	<time datetime="2020-05-16T17:28:38.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-17</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h4 id="起源："><a href="#起源：" class="headerlink" title="起源："></a>起源：</h4><ol>
-<li>比特币的创建者中本聪不满当时西方的货币政策。在他看来 , 西方国家中央银行对商业银行的保护以及其货币的过度增发是导致当时的金融危机的主要原因。<h4 id="exaple："><a href="#exaple：" class="headerlink" title="exaple："></a>exaple：</h4></li>
-<li>开始人们用物品换物品，但是由于在交换的过程中，出现了携带不方便，难以换算等问题? </li>
-<li>为解决这个问题人们还是想到了说是使用金子，容易保存且比较稀有，相对于以前方便携带，于是人们开始了实物货币时代。但是又遇到问题了，金子资源不够了，也会有磨损。</li>
-<li>又有人提出了使用纸币，将所有金子都上缴等价换纸币，纸币只能由固定的地方（政府银行）印出来才有效，拥有固定的标号和签字等。当有损坏的时候可以拿着纸币去银行换取新的那么旧的纸币就销毁掉。</li>
-<li>虽然在使用纸币的时候没有怎么遇到非常致命的问题，但是造币太累了，还有就是有人制造假币等等问题 于是又有人提出，我们为什么不去搞一个账本，所有的交易记录都放在账本上，把每个人目前所拥有的纸币都交上来，然后在数据库里面维护账户的信息。但是这个玩意还是有问题，就是如果这个数据库管理员有私心把这个账簿改掉了，那怎么办。</li>
-<li>于是有一个天才科学家“中本聪”来了，他说：我们不要具体记录某个人算好的账，如剩余多少钱，而是去记录所有的交易，那么每个人有多少钱就可以通过交易记录推算出来。并且这个交易记录账本交给大家来维护。于是来了这个去中心化的记账系统，也叫做A Peer-to-Peer Electronic Cash System（一个点对点电子现金系统）。 <h4 id="什么是blockchain，什么是Bitcoins？两着又有什么关系呢？"><a href="#什么是blockchain，什么是Bitcoins？两着又有什么关系呢？" class="headerlink" title="什么是blockchain，什么是Bitcoins？两着又有什么关系呢？"></a>什么是blockchain，什么是Bitcoins？两着又有什么关系呢？</h4>   类比一下吧，支付宝中的金额数就是BTC，其保证金额正常转账正常交易的系统就是区块链，我现在就是类比一下，但是支付宝和这玩意完全是两会事！！！！再强调一下，我的意思是blochain是技术，bitCoins是一个服务。使用blockchain实现了bitCoins！！！ 但是我个人觉得这玩意更像是一个有一定算法的数据结构。咋先入门不BB那么深了！！</li>
-</ol>
-<h4 id="技术是用来干什么的，就是用来解决问题的吗！（也可以这么说吧，技术就是因为问题而产生的）那bitcoins都遇到了那些问题？而发明除了区块链这门技术？"><a href="#技术是用来干什么的，就是用来解决问题的吗！（也可以这么说吧，技术就是因为问题而产生的）那bitcoins都遇到了那些问题？而发明除了区块链这门技术？" class="headerlink" title="技术是用来干什么的，就是用来解决问题的吗！（也可以这么说吧，技术就是因为问题而产生的）那bitcoins都遇到了那些问题？而发明除了区块链这门技术？"></a>技术是用来干什么的，就是用来解决问题的吗！（也可以这么说吧，技术就是因为问题而产生的）那bitcoins都遇到了那些问题？而发明除了区块链这门技术？</h4><ol>
-<li>为什么要发明bitcoins系统呢？正如我上面的example，诚信吗，被一个人控制。这玩意容易被修改掉, 如果说让所有的人都去维护账簿那岂不是妙哉！还有就是 bitcoins 系统是一个 transaction-based ledger 也就是说它是基于账单记录的一个交易账簿。 所以说所有人都必须知道这个账簿的所有交易记录才能去做帐，才能计算出来自己的btc余额，那么这就来问题了！那既然账簿都公布出去了，那这玩意岂不是完犊子了，张三说我出去“玩”的花费岂不是被老婆知道了！！这不就GG了，聪哥说这简单啊！说他也想到了！他也有老婆啊！这就牵扯到了密码学中的Asymmetric encryption（非对称加密）和 hash 算法 。使用BTC系统的人在创建账户的时候会有两个key ，public key（公匙） 和 private key（私匙）public key也就是类似与我们的账号，private key 也就是类似于我们的密码。 这样的话那这谁也不知道这个是谁啊 ，还有人就会问那他老婆钥匙知道他的public key 那也不就知道他是谁了！！！！  hash的算法可不是吃素的，这个public key 和 private key 是通过hash 算法计算出来的 其中bitcoins 系统中使用的算法就是sha256 ， 比如你是jingyangchun 通过hash算法后直接变成256个由0和1组合打二进制代码。但是有人就说他老婆反算回来不就行了！！ 好吧 这个算法是反算不回来的。现在被老婆发现这个问题解决了，那会不会有创建的private key 和 public key 和其他人是一样的呢？  这个算法的好处就是 colloction free  意思就是没有人能制造出hash 碰撞，hash碰撞的意思是 就是jingyangchun 在通过hash 计算后在人为的情况下是制造不出来相同的hash值的。所以说你是唯一的（这个的前提条件是：你的输入空间是足够大的，意思就是你这个jingyangchun简简单单的字符串是不行的，得再加 个字符串才可以的jingyangchun+weqhsvsdkhvsdkhdvhksvhk ）所以说账户的安全问题得到保证了！看下图！</li>
-</ol>
-<p><img src="https://img-blog.csdnimg.cn/2020012318201875.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/05/17/%E6%AF%94%E7%89%B9%E5%B8%81%E5%92%8C%E5%8C%BA%E5%9D%97%E9%93%BE%E6%8A%80%E6%9C%AF/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
-      <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/">Next &amp;raquo;</a>
+      <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/2/">Next &amp;raquo;</a>
     </nav>
   
 
@@ -1112,6 +1142,12 @@ private static class FooGuard implements Guard&lt;States, Events&gt; {
       	</div>
     </div>
   </div>
+  {% if theme.footer.counter %}
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span>次</span>
+    <span class="post-meta-divider">|</span>
+    <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人</span>
+{% endif %}
 </footer>
     </div>
     <script>

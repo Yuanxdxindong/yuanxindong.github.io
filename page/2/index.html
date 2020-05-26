@@ -150,6 +150,80 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-比特币和区块链技术" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/05/17/%E6%AF%94%E7%89%B9%E5%B8%81%E5%92%8C%E5%8C%BA%E5%9D%97%E9%93%BE%E6%8A%80%E6%9C%AF/">比特币和区块链技术</a>
+    </h1>
+  
+
+        
+        <a href="/2020/05/17/%E6%AF%94%E7%89%B9%E5%B8%81%E5%92%8C%E5%8C%BA%E5%9D%97%E9%93%BE%E6%8A%80%E6%9C%AF/" class="archive-article-date">
+  	<time datetime="2020-05-16T17:28:38.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-17</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h4 id="起源："><a href="#起源：" class="headerlink" title="起源："></a>起源：</h4><ol>
+<li>比特币的创建者中本聪不满当时西方的货币政策。在他看来 , 西方国家中央银行对商业银行的保护以及其货币的过度增发是导致当时的金融危机的主要原因。<h4 id="exaple："><a href="#exaple：" class="headerlink" title="exaple："></a>exaple：</h4></li>
+<li>开始人们用物品换物品，但是由于在交换的过程中，出现了携带不方便，难以换算等问题? </li>
+<li>为解决这个问题人们还是想到了说是使用金子，容易保存且比较稀有，相对于以前方便携带，于是人们开始了实物货币时代。但是又遇到问题了，金子资源不够了，也会有磨损。</li>
+<li>又有人提出了使用纸币，将所有金子都上缴等价换纸币，纸币只能由固定的地方（政府银行）印出来才有效，拥有固定的标号和签字等。当有损坏的时候可以拿着纸币去银行换取新的那么旧的纸币就销毁掉。</li>
+<li>虽然在使用纸币的时候没有怎么遇到非常致命的问题，但是造币太累了，还有就是有人制造假币等等问题 于是又有人提出，我们为什么不去搞一个账本，所有的交易记录都放在账本上，把每个人目前所拥有的纸币都交上来，然后在数据库里面维护账户的信息。但是这个玩意还是有问题，就是如果这个数据库管理员有私心把这个账簿改掉了，那怎么办。</li>
+<li>于是有一个天才科学家“中本聪”来了，他说：我们不要具体记录某个人算好的账，如剩余多少钱，而是去记录所有的交易，那么每个人有多少钱就可以通过交易记录推算出来。并且这个交易记录账本交给大家来维护。于是来了这个去中心化的记账系统，也叫做A Peer-to-Peer Electronic Cash System（一个点对点电子现金系统）。 <h4 id="什么是blockchain，什么是Bitcoins？两着又有什么关系呢？"><a href="#什么是blockchain，什么是Bitcoins？两着又有什么关系呢？" class="headerlink" title="什么是blockchain，什么是Bitcoins？两着又有什么关系呢？"></a>什么是blockchain，什么是Bitcoins？两着又有什么关系呢？</h4>   类比一下吧，支付宝中的金额数就是BTC，其保证金额正常转账正常交易的系统就是区块链，我现在就是类比一下，但是支付宝和这玩意完全是两会事！！！！再强调一下，我的意思是blochain是技术，bitCoins是一个服务。使用blockchain实现了bitCoins！！！ 但是我个人觉得这玩意更像是一个有一定算法的数据结构。咋先入门不BB那么深了！！</li>
+</ol>
+<h4 id="技术是用来干什么的，就是用来解决问题的吗！（也可以这么说吧，技术就是因为问题而产生的）那bitcoins都遇到了那些问题？而发明除了区块链这门技术？"><a href="#技术是用来干什么的，就是用来解决问题的吗！（也可以这么说吧，技术就是因为问题而产生的）那bitcoins都遇到了那些问题？而发明除了区块链这门技术？" class="headerlink" title="技术是用来干什么的，就是用来解决问题的吗！（也可以这么说吧，技术就是因为问题而产生的）那bitcoins都遇到了那些问题？而发明除了区块链这门技术？"></a>技术是用来干什么的，就是用来解决问题的吗！（也可以这么说吧，技术就是因为问题而产生的）那bitcoins都遇到了那些问题？而发明除了区块链这门技术？</h4><ol>
+<li>为什么要发明bitcoins系统呢？正如我上面的example，诚信吗，被一个人控制。这玩意容易被修改掉, 如果说让所有的人都去维护账簿那岂不是妙哉！还有就是 bitcoins 系统是一个 transaction-based ledger 也就是说它是基于账单记录的一个交易账簿。 所以说所有人都必须知道这个账簿的所有交易记录才能去做帐，才能计算出来自己的btc余额，那么这就来问题了！那既然账簿都公布出去了，那这玩意岂不是完犊子了，张三说我出去“玩”的花费岂不是被老婆知道了！！这不就GG了，聪哥说这简单啊！说他也想到了！他也有老婆啊！这就牵扯到了密码学中的Asymmetric encryption（非对称加密）和 hash 算法 。使用BTC系统的人在创建账户的时候会有两个key ，public key（公匙） 和 private key（私匙）public key也就是类似与我们的账号，private key 也就是类似于我们的密码。 这样的话那这谁也不知道这个是谁啊 ，还有人就会问那他老婆钥匙知道他的public key 那也不就知道他是谁了！！！！  hash的算法可不是吃素的，这个public key 和 private key 是通过hash 算法计算出来的 其中bitcoins 系统中使用的算法就是sha256 ， 比如你是jingyangchun 通过hash算法后直接变成256个由0和1组合打二进制代码。但是有人就说他老婆反算回来不就行了！！ 好吧 这个算法是反算不回来的。现在被老婆发现这个问题解决了，那会不会有创建的private key 和 public key 和其他人是一样的呢？  这个算法的好处就是 colloction free  意思就是没有人能制造出hash 碰撞，hash碰撞的意思是 就是jingyangchun 在通过hash 计算后在人为的情况下是制造不出来相同的hash值的。所以说你是唯一的（这个的前提条件是：你的输入空间是足够大的，意思就是你这个jingyangchun简简单单的字符串是不行的，得再加 个字符串才可以的jingyangchun+weqhsvsdkhvsdkhdvhksvhk ）所以说账户的安全问题得到保证了！看下图！</li>
+</ol>
+<p><img src="https://img-blog.csdnimg.cn/2020012318201875.jpg?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/05/17/%E6%AF%94%E7%89%B9%E5%B8%81%E5%92%8C%E5%8C%BA%E5%9D%97%E9%93%BE%E6%8A%80%E6%9C%AF/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-HTTP基础知识" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -1180,101 +1254,9 @@
 
 
   
-    <article id="post-article-title" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/05/16/article-title/">java的反射机制到底是做什么的？</a>
-    </h1>
-  
-
-        
-        <a href="/2020/05/16/article-title/" class="archive-article-date">
-  	<time datetime="2020-05-16T12:02:57.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-16</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>在学习java的动态代理的时候用到了反射机制，那我们来对反射机制深入了解一下</p>
-<h3 id="权威指南"><a href="#权威指南" class="headerlink" title="权威指南"></a>权威指南</h3><p>通过wiki百科可知： 在计算机学中，反射（英语：reflection）是指计算机程序在运行时（runtime）可以访问、检测和修改它本身状态或行为的一种能力。[1]用比喻来说，反射就是程序在运行的时候能够“观察”并且修改自己的行为。</p>
-<p>在类型检测严格的面向对象的编程语言如Java中，一般需要在编译期间对程序中需要调用的对象的具体类型、接口、字段和方法的合法性进行检查。反射技术则允许将对需要调用的对象的信息检查工作从编译期间推迟到运行期间再现场执行。这样一来，可以在编译期间先不明确目标对象的接口名称、字段（fields，即对象的成员变量）、可用方法，然后在运行根据目标对象自身的信息决定如何处理。它还允许根据判断结果进行实例化新对象和相关方法的调用。</p>
-<h3 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h3><p>在一般情况下， 文件会在编译期转换为jvm可执行的字节码 .class 文件，这个执行过程是在类加载的时候执行的，但是jvm在类加载对这一过程并不严格，所以说这一加载步骤可以放在运行期执行。利用这一特性也就有了反射机制。</p>
-<p>反射机制很重要的一点就是“运行时”，其使得我们可以在程序运行时加载、探索以及使用编译期间完全未知的 .class 文件。换句话说，Java 程序可以加载一个运行时才得知名称的 .class 文件，然后获悉其完整构造，并生成其对象实体、或对其 fields（变量）设值、或调用其 methods（方法）。</p>
-<p>我感觉还有有点“干” ,反射也是创建对象的一种方式，使用new 关键字可以创建一个对象，那是因为我们知道他是个什么对象，而反射反射的意思是，我并不知道这个对象是什么，但是我可以通过class.forName()读取到这个对象，然后也可以读取到他的Method ，interface ，Construct等，还可以通过Invoke（）方法进行赋值等操作。</p>
-<h3 id="java中反射的使用"><a href="#java中反射的使用" class="headerlink" title="java中反射的使用"></a>java中反射的使用</h3><ol>
-<li>写一个demo</li>
-</ol>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line">package reflect;</span><br><span class="line"></span><br><span class="line">import java.lang.reflect.Constructor;</span><br><span class="line">import java.lang.reflect.InvocationTargetException;</span><br><span class="line">import java.lang.reflect.Method;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * @Author:yuanxindong</span><br><span class="line"> * @Date:2020&#x2F;5&#x2F;1113:23</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class Person extends Huaman&#123;</span><br><span class="line"></span><br><span class="line">    private  String name;</span><br><span class="line">    private  String gender;</span><br><span class="line"></span><br><span class="line">    public String getName() &#123;</span><br><span class="line">        return name;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setName(String name) &#123;</span><br><span class="line">        this.name &#x3D; name;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public String getGender() &#123;</span><br><span class="line">        return gender;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setGender(String gender) &#123;</span><br><span class="line">        this.gender &#x3D; gender;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public String toString() &#123;</span><br><span class="line">        return &quot;Person&#123;&quot; +</span><br><span class="line">                &quot;name&#x3D;&#39;&quot; + name + &#39;\&#39;&#39; +</span><br><span class="line">                &quot;, gender&#x3D;&#39;&quot; + gender + &#39;\&#39;&#39; +</span><br><span class="line">                &#39;&#125;&#39;;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException &#123;</span><br><span class="line">        &#x2F;&#x2F;通过classLoad 获取类的 Class 对象实例。</span><br><span class="line">        Class c &#x3D; Class.forName(&quot;reflect.Person&quot;);</span><br><span class="line">        &#x2F;&#x2F;根据Class对象实例获取 Constructor 对象</span><br><span class="line">        Method setName &#x3D; c.getMethod(&quot;setName&quot;, String.class);</span><br><span class="line">        &#x2F;&#x2F;根据 Class 对象实例获取 Constructor 对象</span><br><span class="line">        Constructor constructor &#x3D; c.getConstructor();</span><br><span class="line">        &#x2F;&#x2F;使用Constructor对象的newInstance 方法获取反射类对象</span><br><span class="line">        Object o &#x3D; constructor.newInstance();</span><br><span class="line">        &#x2F;&#x2F;使用invoke方法调用创建实例对象的方法。</span><br><span class="line">        setName.invoke(o,&quot;yuanxindong&quot;);</span><br><span class="line">        &#x2F;&#x2F;查看调用是否成功</span><br><span class="line">        System.out.println(o.toString());</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<ol start="2">
-<li>下面是执行结果。<br><img src="https://img-blog.csdnimg.cn/20200513011817968.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></li>
-</ol>
-<p><strong>==上面的代码就可以看出来java中的反射基础使用，但是一个new关键字和直接一个set方法就能解决的问题为什么，非要使用反射呢？==</strong></p>
-<ul>
-<li>先明确一点，反射直接根据文件的地址获取class，将其加载到内存中       。不需要在刚开始进行编译，直接在运行期间进行读取加载。 这就是他的优势，我们使用new关键字这个类必须是被预先被加载过的，我们可以大概看一forName（）的源码：<br><img src="https://img-blog.csdnimg.cn/20200513011840605.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>其中的classLoad也就是父类加载器，我们在这里就先证明他就是去加载class对象了。（具体不在这里细究）。如果是使用new 关键字的话那么这个对象前提得是被解析过的（加载，验证，初始化和卸载这五个阶段顺序是确定的，类的加载过程必须按照这种顺序按部就班的开始，而解析阶段却不一定：他在某些情况下可以在初始化之后再开始《深入理解java虚拟机》）</li>
-<li>再者就是Java反射现在应用的场景，<ol>
-<li>JDBC的数据库连接</li>
-<li>Spring 框架的使用<ol>
-<li>将程序内所有 XML 或 Properties  </li>
-<li>配置文件加载入内存中<br>Java类里面解析xml或properties里面的内容，得到对应实体类的字节码字符串以及相关的属性信息</li>
-<li>使用反射机制，根据这个字符串获得某个类的Class实例</li>
-</ol>
-</li>
-<li>再在这里扯一下Spring为什么这么做呢？他的意思就是遵循“好莱坞规则”我不去找你，而是我来找你。也就是IOC和DI的意思，将对象创建好注入到IOC容器再使用依赖注入的方式主动注入到对应的类中。<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3>说了上面那么一大堆，也不知道吧反射机制说清楚没有，<br>java的反射的目的就是在==运行时期动态加载class对象==和==实例化对象==,主要使用的方法有：</li>
-</ol>
-</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Class.forName();</span><br><span class="line">class.getMethod();</span><br><span class="line">class.getConstructor();</span><br><span class="line">constructor.newInstance();</span><br><span class="line">method.invoke(Object,value);</span><br></pre></td></tr></table></figure>
-<h3 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h3><p>我们在使用携程的文件配置系统 APollo的时候，他是如何达到更改配置后达到热更新的？是否基础原理也是用到了反射？？</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/05/16/article-title/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
   
     <nav id="page-nav">
-      <a class="extend prev" rel="prev" href="/">&amp;laquo; Prev</a><a class="page-number" href="/">1</a><span class="page-number current">2</span>
+      <a class="extend prev" rel="prev" href="/">&amp;laquo; Prev</a><a class="page-number" href="/">1</a><span class="page-number current">2</span><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/3/">Next &amp;raquo;</a>
     </nav>
   
 
@@ -1293,6 +1275,12 @@
       	</div>
     </div>
   </div>
+  {% if theme.footer.counter %}
+    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span id="busuanzi_container_site_pv">本站总访问量<span id="busuanzi_value_site_pv"></span>次</span>
+    <span class="post-meta-divider">|</span>
+    <span id="busuanzi_container_site_uv">本站访客数<span id="busuanzi_value_site_uv"></span>人</span>
+{% endif %}
 </footer>
     </div>
     <script>
