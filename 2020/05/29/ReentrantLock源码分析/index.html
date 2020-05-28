@@ -6,22 +6,22 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://www.yuanxindong.com">
-  <title>final关键字你真的会用? | Welcome to Jeff&#39;s blog</title>
+  <title>ReentrantLock源码分析 | Welcome to Jeff&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="背景codeReview的时候，看到各种final关键字的”骚“操作，今天认真复习一下final关键字。我们都知道final关键字可以使用到类上，也可以使用道方法上，也可以使用到数据上，但是他的使用会为我们提供哪些好处呢？ final关键自的使用Java关键字final通常指的是“这是无法改变的”不想作出改变的原因有两种：设计和效率。由于一般使用这一方面对final不是很了解（例如我）导致使用目的">
+  <meta name="description" content="背景上一篇讲了Java中的并发问题，那么我们今天来看看来解决兵法因为引起线程安全问题的解决方案之一的“锁”，ReentrantLock  ReentrantLock的特性 说到ReentrantLock那我们必须也得提提Sychronized关键字了。看一下对比：来源：网络 我们通过伪代码的形式看一下sychronized和reentrant的用法。  1234567891011121314151">
 <meta property="og:type" content="article">
-<meta property="og:title" content="final关键字你真的会用?">
-<meta property="og:url" content="http://www.yuanxindong.com/2020/05/26/final%E5%85%B3%E9%94%AE%E5%AD%97%E4%BD%A0%E7%9C%9F%E7%9A%84%E4%BC%9A%E7%94%A8/index.html">
+<meta property="og:title" content="ReentrantLock源码分析">
+<meta property="og:url" content="http://www.yuanxindong.com/2020/05/29/ReentrantLock%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/index.html">
 <meta property="og:site_name" content="Welcome to Jeff&#39;s blog">
-<meta property="og:description" content="背景codeReview的时候，看到各种final关键字的”骚“操作，今天认真复习一下final关键字。我们都知道final关键字可以使用到类上，也可以使用道方法上，也可以使用到数据上，但是他的使用会为我们提供哪些好处呢？ final关键自的使用Java关键字final通常指的是“这是无法改变的”不想作出改变的原因有两种：设计和效率。由于一般使用这一方面对final不是很了解（例如我）导致使用目的">
+<meta property="og:description" content="背景上一篇讲了Java中的并发问题，那么我们今天来看看来解决兵法因为引起线程安全问题的解决方案之一的“锁”，ReentrantLock  ReentrantLock的特性 说到ReentrantLock那我们必须也得提提Sychronized关键字了。看一下对比：来源：网络 我们通过伪代码的形式看一下sychronized和reentrant的用法。  1234567891011121314151">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://img-blog.csdnimg.cn/20200526010038255.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
-<meta property="og:image" content="https://img-blog.csdnimg.cn/20200526010131978.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
-<meta property="article:published_time" content="2020-05-25T17:05:35.000Z">
-<meta property="article:modified_time" content="2020-05-25T17:05:58.618Z">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200529021109621.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200529021156245.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta property="article:published_time" content="2020-05-28T18:06:47.000Z">
+<meta property="article:modified_time" content="2020-05-28T18:12:53.415Z">
 <meta property="article:author" content="yuanxindong">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20200526010038255.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20200529021109621.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
   
     <link rel="alternative" href="/atom.xml" title="Welcome to Jeff&#39;s blog" type="application/atom+xml">
   
@@ -153,46 +153,46 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-final关键字你真的会用" class="article article-type-post " itemscope itemprop="blogPost">
+            <article id="post-ReentrantLock源码分析" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 class="article-title" itemprop="name">
-      final关键字你真的会用?
+      ReentrantLock源码分析
     </h1>
   
 
         
-        <a href="/2020/05/26/final%E5%85%B3%E9%94%AE%E5%AD%97%E4%BD%A0%E7%9C%9F%E7%9A%84%E4%BC%9A%E7%94%A8/" class="archive-article-date">
-  	<time datetime="2020-05-25T17:05:35.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-26</time>
+        <a href="/2020/05/29/ReentrantLock%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" class="archive-article-date">
+  	<time datetime="2020-05-28T18:06:47.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-29</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>codeReview的时候，看到各种final关键字的”骚“操作，今天认真复习一下final关键字。<br>我们都知道final关键字可以使用到类上，也可以使用道方法上，也可以使用到数据上，但是他的使用会为我们提供哪些好处呢？</p>
-<h3 id="final关键自的使用"><a href="#final关键自的使用" class="headerlink" title="final关键自的使用"></a>final关键自的使用</h3><p>Java关键字final通常指的是“这是无法改变的”不想作出改变的原因有两种：设计和效率。由于一般使用这一方面对final不是很了解（例如我）导致使用目的不是很明确。导致使用错误。而达到反效果。final可以修饰数据，方法，和类</p>
-<h4 id="final数据"><a href="#final数据" class="headerlink" title="final数据"></a>final数据</h4><ol>
-<li>被final修饰过的数据，也就是向编译器说这个数据是不可改变了。 或者说在运行时初始化赋值后不可改变。</li>
-<li>在很多情况下我们都需要使用到静态编译器不变的常量。列如我们为了防止代码全局创建多个相同的数据，那我们就在全局定义一些“永不改变的编译时常量”，我们随便打开个源码看看大佬们对final的使用jUC包中的ThreadPoolExcutor类中的应用：</li>
+        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>上一篇讲了Java中的并发问题，那么我们今天来看看来解决兵法因为引起线程安全问题的解决方案之一的“锁”，ReentrantLock </p>
+<h3 id="ReentrantLock的特性"><a href="#ReentrantLock的特性" class="headerlink" title="ReentrantLock的特性"></a>ReentrantLock的特性</h3><ul>
+<li>说到ReentrantLock那我们必须也得提提Sychronized关键字了。看一下对比：<br><img src="https://img-blog.csdnimg.cn/20200529021109621.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>来源：网络</li>
+<li>我们通过伪代码的形式看一下sychronized和reentrant的用法。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; **************************Synchronized的使用方式**************************</span><br><span class="line">&#x2F;&#x2F; 1.用于代码块</span><br><span class="line">synchronized (this) &#123;&#125;</span><br><span class="line">&#x2F;&#x2F; 2.用于对象</span><br><span class="line">synchronized (object) &#123;&#125;</span><br><span class="line">&#x2F;&#x2F; 3.用于方法</span><br><span class="line">public synchronized void test () &#123;&#125;</span><br><span class="line">&#x2F;&#x2F; 4.可重入</span><br><span class="line">for (int i &#x3D; 0; i &lt; 100; i++) &#123;</span><br><span class="line">	synchronized (this) &#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line">&#x2F;&#x2F; **************************ReentrantLock的使用方式**************************</span><br><span class="line">public void test () throw Exception &#123;</span><br><span class="line">	&#x2F;&#x2F; 1.初始化选择公平锁、非公平锁</span><br><span class="line">	ReentrantLock lock &#x3D; new ReentrantLock(true);</span><br><span class="line">	&#x2F;&#x2F; 2.可用于代码块</span><br><span class="line">	lock.lock();</span><br><span class="line">	try &#123;</span><br><span class="line">		try &#123;</span><br><span class="line">			&#x2F;&#x2F; 3.支持多种加锁方式，比较灵活; 具有可重入特性</span><br><span class="line">			if(lock.tryLock(100, TimeUnit.MILLISECONDS))&#123; &#125;</span><br><span class="line">		&#125; finally &#123;</span><br><span class="line">			&#x2F;&#x2F; 4.手动释放锁</span><br><span class="line">			&#x2F;&#x2F;在此处需要特别的注意，必须使用finally里面进行解锁，当上面代码异常的时候也能解锁。</span><br><span class="line">			lock.unlock()</span><br><span class="line">		&#125;</span><br><span class="line">	&#125; finally &#123;</span><br><span class="line">		lock.unlock();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="reentrantLock的实现"><a href="#reentrantLock的实现" class="headerlink" title="reentrantLock的实现"></a>reentrantLock的实现</h3><ol>
+<li>首先我们得明确reentrantLock内部做了什么事情</li>
+<li>reentrntLock 各个类的UML图</li>
 </ol>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"> *    When pool is empty</span><br><span class="line"> * TIDYING -&gt; TERMINATED</span><br><span class="line"> *    When the terminated() hook method has completed</span><br><span class="line"> *</span><br><span class="line"> * Threads waiting in awaitTermination() will return when the</span><br><span class="line"> * state reaches TERMINATED.</span><br><span class="line"> *</span><br><span class="line"> * Detecting the transition from SHUTDOWN to TIDYING is less</span><br><span class="line"> * straightforward than you&#39;d like because the queue may become</span><br><span class="line"> * empty after non-empty and vice versa during SHUTDOWN state, but</span><br><span class="line"> * we can only terminate if, after seeing that it is empty, we see</span><br><span class="line"> * that workerCount is 0 (which sometimes entails a recheck -- see</span><br><span class="line"> * below).</span><br><span class="line"> *&#x2F;</span><br><span class="line">private final AtomicInteger ctl &#x3D; new AtomicInteger(ctlOf(RUNNING, 0));</span><br><span class="line">private static final int COUNT_BITS &#x3D; Integer.SIZE - 3;</span><br><span class="line">private static final int CAPACITY   &#x3D; (1 &lt;&lt; COUNT_BITS) - 1;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; runState is stored in the high-order bits</span><br><span class="line">private static final int RUNNING    &#x3D; -1 &lt;&lt; COUNT_BITS;</span><br><span class="line">private static final int SHUTDOWN   &#x3D;  0 &lt;&lt; COUNT_BITS;</span><br><span class="line">private static final int STOP       &#x3D;  1 &lt;&lt; COUNT_BITS;</span><br><span class="line">private static final int TIDYING    &#x3D;  2 &lt;&lt; COUNT_BITS;</span><br><span class="line">private static final int TERMINATED &#x3D;  3 &lt;&lt; COUNT_BITS;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; Packing and unpacking ctl</span><br><span class="line">private static int runStateOf(int c)     &#123; return c &amp; ~CAPACITY; &#125;</span><br><span class="line">private static int workerCountOf(int c)  &#123; return c &amp; CAPACITY; &#125;</span><br><span class="line">private static int ctlOf(int rs, int wc) &#123; return rs | wc; &#125;</span><br><span class="line"></span><br><span class="line">&#x2F;*</span><br><span class="line"> * Bit field accessors that don&#39;t require unpacking ctl.</span><br><span class="line"> * These depend on the bit layout and on workerCount being never negative.</span><br><span class="line"> *&#x2F;</span><br></pre></td></tr></table></figure>
-
-<p>将线程池的代表的状态值使用static和final修饰成为了一个“永不改变的编译时常量”。在这个过程中也不怕被别有用心的人通过某种方式（类似与Java发射）进行修改等。 staitc关键字保证在编译期赋值（static修饰的数据会在类加载过程中分配内存空间且赋值），final保证不会变。<br>类加载的过程：<br><img src="https://img-blog.csdnimg.cn/20200526010038255.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>其中在准备阶段就会将final修饰的数据给赋予真正的值。<br><img src="https://img-blog.csdnimg.cn/20200526010131978.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>3. 如果final修饰的这个数据是一个对象的时候，他这个对象引用是不会改变的，但是对象自身还是可以改变的，java自身是没有提供保证对象不可变的途径如下代码：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">import lombok.Data;</span><br><span class="line">import lombok.ToString;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * @author yuanxindong</span><br><span class="line"> *&#x2F;</span><br><span class="line">@ToString</span><br><span class="line">@Data</span><br><span class="line">public class FinalUse &#123;</span><br><span class="line">    private String name &#x3D; &quot;yaunxindong&quot;;</span><br><span class="line">    private String gender&#x3D; &quot;N&quot;;</span><br><span class="line">    static final FinalUse finalUse &#x3D;  new FinalUse();</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        System.out.println(&quot;修改前&quot; +finalUse.toString());</span><br><span class="line">        finalUse.setGender(&quot;dog&quot;);</span><br><span class="line">        System.out.println(&quot;修改后&quot;+finalUse.toString());</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>运行结果：<br>[外链图片转存失败,源站可能有防盗链机制,建议将图片保存下来直接上传(img-iptzY06K-1590425614844)(<a href="http://note.youdao.com/yws/res/13486/9A6FDF832FD34E3085E8CB51C9045F1F)]" target="_blank" rel="noopener">http://note.youdao.com/yws/res/13486/9A6FDF832FD34E3085E8CB51C9045F1F)]</a><br>如果说我们不希望对象也不被改变，那么我们是否直接使用final进行修饰其中内部的属性，在这个时候本分感觉，这样的话我们就可以使用枚举了。<br>4. 使用final 修饰方法中的参数，这样修饰的用意是不让方法内修改这个参数，这个用法之前一直没见过，今天看见同事使用了，使用场景是一个业务埋点工具类。所有入参数被修饰。这样有好处吗？有把，如果另一个人维护代码的时候把埋点数据改掉了。。。。。。YY 不敢确定</p>
-<h4 id="final方法"><a href="#final方法" class="headerlink" title="final方法"></a>final方法</h4><ol>
-<li>使用final将方法锁定以防止任何继承类修改他的含义。这是出于设计的考虑：想要确保在继承中使方法行为保持不变，并且不会被覆盖</li>
-<li>还有就是效率，在过去如果将一个方法指明为final，就是同意编译器将针对该方法的所有调用都转为内嵌调用。（将参数压入栈，跳至方法代码处执行，然后跳回并清理栈中的参数，处理返回值）并且以方法体中的实际代码的副本来代替方法调用。这将消除方法调用的开销。但是就怕但是，hotspot虚拟机中已经优化掉了上面所说的内存消耗问题。所以也不用使用final来进行优化了（我今天就用final修饰了方法）。</li>
-<li>private 修饰的方法，已经隐式指定为final了，但是使用private 修饰的方法仍然可以修饰被final修饰但是没有什么卵用。<h4 id="final类"><a href="#final类" class="headerlink" title="final类"></a>final类</h4></li>
-<li>当某个类的整体被定义为final的时候，就表明了我们不想把这个类被被人使用，他也就不可以被继承。换句话说也就是你对该类的设计就是不需要做任何变动，或出于安全考虑，你不希望他有子类。 </li>
-<li>被final修饰的类的方法也会隐式成为final，但也可以添加final 但是也不会带来任何意义。</li>
+<p><img src="https://img-blog.csdnimg.cn/20200529021156245.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述">####  几个重要的方法<br>    1. ReentrantLock 实现了Lock接口<br>    2. 抽象类Sync是ReentrntLock的重要组成部分其中实现<br>    3. FairSync及NonFairSync均继承于Sync<br>    4. Sync继承抽象类了AbstractQueuedSynchronizer；<br>    5. AbstractQueuedSynchronizer继承了抽象类AbstractOwnableSynchronizer。</p>
+<ol>
+<li>看代码</li>
 </ol>
-<h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><p>final的作用就是为了更加规范的设计，和更高的效率。正是因为牵扯到了设计和效率，有时他们会产生冲突，我个人觉得在效率方面的是微乎其微，且我们常使用的hotspot已经️对这方面优化了，所以我个人观点就是更偏向设计。</p>
-<h4 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h4><p>在JVM层面final关键字是起了什么作用呢？</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F;reentrntLock的两个构造方法</span><br><span class="line">public ReentrantLock() &#123;</span><br><span class="line">    sync &#x3D; new NonfairSync();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public ReentrantLock(boolean fair) &#123;</span><br><span class="line">    sync &#x3D; fair ? new FairSync() : new NonfairSync();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;根据初始化的sync掉对应的方法，如果初始化的是公平锁就去调用公平锁的非公平就去调用对应的非公平锁。</span><br><span class="line">    public void lock() &#123;</span><br><span class="line">        sync.lock();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    &#x2F;**</span><br><span class="line">     * Sync object for fair locks</span><br><span class="line">     * 公平锁 重写Sycn类的lock抽象方法</span><br><span class="line">     * 初始化的时候构造出来的</span><br><span class="line">     *&#x2F;</span><br><span class="line">    static final class FairSync extends Sync &#123;</span><br><span class="line">        private static final long serialVersionUID &#x3D; -3000897897090466540L;</span><br><span class="line"></span><br><span class="line">        final void lock() &#123;</span><br><span class="line">        &#x2F;&#x2F;由于继承了Sync Sync又继承了AbstractQueuedSynchronizer，于是直接调用AQS这个抽象类的方</span><br><span class="line">            acquire(1);</span><br><span class="line">        &#125;</span><br><span class="line">    &#x2F;**</span><br><span class="line">    </span><br><span class="line">            &#x2F;**</span><br><span class="line">         * Performs lock.  Try immediate barge, backing up to normal</span><br><span class="line">         * 非公平锁的实现  在刚开始reenTrant进行构造方法进行初始化的时候就会</span><br><span class="line">         * 将sync.lock()方法进行对应的实现</span><br><span class="line">         *&#x2F;</span><br><span class="line">        final void lock() &#123;</span><br><span class="line">            if (compareAndSetState(0, 1))</span><br><span class="line">                setExclusiveOwnerThread(Thread.currentThread());</span><br><span class="line">            else</span><br><span class="line">                acquire(1);</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+<p>1.从上面的方法我们可以看的出</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line">* acqutre这个方法是为了获取锁，更改</span><br><span class="line">*&#x2F;</span><br><span class="line"> public final void acquire(int arg) &#123;</span><br><span class="line">        if (!tryAcquire(arg) &amp;&amp;</span><br><span class="line">            acquireQueued(addWaiter(Node.EXCLUSIVE), arg))</span><br><span class="line">            selfInterrupt();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">&#x2F;**</span><br><span class="line">*</span><br><span class="line">*&#x2F;</span><br><span class="line"> protected final boolean tryAcquire(int acquires) &#123;</span><br><span class="line">            final Thread current &#x3D; Thread.currentThread();</span><br><span class="line">            int c &#x3D; getState();</span><br><span class="line">            if (c &#x3D;&#x3D; 0) &#123;</span><br><span class="line">                if (!hasQueuedPredecessors() &amp;&amp;</span><br><span class="line">                    compareAndSetState(0, acquires)) &#123;</span><br><span class="line">                    setExclusiveOwnerThread(current);</span><br><span class="line">                    return true;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            else if (current &#x3D;&#x3D; getExclusiveOwnerThread()) &#123;</span><br><span class="line">                int nextc &#x3D; c + acquires;</span><br><span class="line">                if (nextc &lt; 0)</span><br><span class="line">                    throw new Error(&quot;Maximum lock count exceeded&quot;);</span><br><span class="line">                setState(nextc);</span><br><span class="line">                return true;</span><br><span class="line">            &#125;</span><br><span class="line">            return false;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<ol start="2">
+<li>太难了 ，明天继续</li>
+</ol>
 
       
 
@@ -251,7 +251,7 @@
     <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
     <p>扫一扫，分享到微信</p>
     <div class="wx-qrcode">
-      <img src="//pan.baidu.com/share/qrcode?url=http://www.yuanxindong.com/2020/05/26/final%E5%85%B3%E9%94%AE%E5%AD%97%E4%BD%A0%E7%9C%9F%E7%9A%84%E4%BC%9A%E7%94%A8/" alt="微信分享二维码">
+      <img src="//pan.baidu.com/share/qrcode?url=http://www.yuanxindong.com/2020/05/29/ReentrantLock%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" alt="微信分享二维码">
     </div>
 </div>
 
@@ -265,18 +265,9 @@
   
 <nav id="article-nav">
   
-    <a href="/2020/05/27/%E7%A7%92%E6%87%82Java%E5%B9%B6%E5%8F%91%E5%92%8C%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/" id="article-nav-newer" class="article-nav-link-wrap">
-      <i class="icon-circle-left"></i>
-      <div class="article-nav-title">
-        
-          秒懂Java并发和线程安全
-        
-      </div>
-    </a>
   
-  
-    <a href="/2020/05/25/Spring-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-IOC%E8%AF%BB%E5%8F%96xml%E9%85%8D%E7%BD%AE%EF%BC%88%E4%B8%80%EF%BC%89/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">Spring 源码解析 IOC读取xml配置（一）</div>
+    <a href="/2020/05/27/%E7%A7%92%E6%87%82Java%E5%B9%B6%E5%8F%91%E5%92%8C%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">秒懂Java并发和线程安全</div>
       <i class="icon-circle-right"></i>
     </a>
   
