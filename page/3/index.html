@@ -150,6 +150,100 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-day01" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/05/17/day01/">中流砥柱java的动态代理</a>
+    </h1>
+  
+
+        
+        <a href="/2020/05/17/day01/" class="archive-article-date">
+  	<time datetime="2020-05-16T16:59:36.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-17</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>在我们学习Spring框架的时候我们是否思考过，Spring是如何实现bean实列注入到IOC容器中呢？我们如何去</p>
+<h3 id="权威指南"><a href="#权威指南" class="headerlink" title="权威指南"></a>权威指南</h3><p>代理是基本的设计模式之一，他是为了提供额外的或不同的操作，而插入的用来代替“实际”对象的对象。这些操作通常涉及与“实际”对象的通信，因此代理通常充当着中间人的角色。<br>Java的动态代理比代理的思想更迈进了一步，因为他可以动态地创建代理并动态的处理对所代理的方法的调用。在动态代理上所做的所有调用都会被重定向到单一的调用处理器上，他的工作是揭示调用的类型并确定相应的对策。      ——-《ThinKing in Java》</p>
+<h3 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h3><ul>
+<li><strong>类比生活</strong><br>代理，平时生活中代理无处不在，如手机生产商的代理商A，A不仅能帮忙给生产商卖手机而且也提供了售后功能。代码中被代理对象就是生产商，而代理商A就是代理对象，可以做生产商的事情，为了方便客户还提供了售后的功能。但是此时这个生产商不固定，且随时会变，且为了利益最大化，那个生产商拿货便宜，就拿谁的货，就在这个时候我们是不是就得成为一个动态代理商？这样就可以方便用户，还能和生产商解耦合。</li>
+<li>抽象层面<br>将一个对象被另一个对象代理，代理对象可以扩展被代理对象的方法，且能在被代理对象对象增加方法。这样实现好之后我们所代理的对象会在编译和累加载之后将带代理对象和被代理对象绑定到一块了。为了让代理更加方便和实用于是就得出了动态代理，也就是再程序运行时可以根据被代理对象生成代理对象。（在java中反射机制就是可以让代码进行动态加载和生成对象）<h3 id="jdk动态代理"><a href="#jdk动态代理" class="headerlink" title="jdk动态代理"></a>jdk动态代理</h3></li>
+</ul>
+<ol>
+<li>JDK的动态代理也就是基于Java的反射机制实现的。</li>
+<li>我们先来看一下Java中的动态代理在代码中是如何实现的： </li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">package dynamicproxy;</span><br><span class="line"></span><br><span class="line">import java.lang.reflect.*;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * @Author:yuanxindong</span><br><span class="line"> * @Date:2020&#x2F;5&#x2F;90:53</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class Client &#123;</span><br><span class="line">    public static void main(String[] args) throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException &#123;</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F;实例化一个对象</span><br><span class="line">        &#x2F;&#x2F;分别分为两种方事实现的，一个是直接new 关键字创建一个对象，</span><br><span class="line">        &#x2F;&#x2F; 第二种是通过反射机制穿件一个对象</span><br><span class="line">        &#x2F;&#x2F;UserServiceImpl userServiceLmpl &#x3D; new UserServiceImpl();</span><br><span class="line">        &#x2F;&#x2F;1。 读取加载&quot;dynamicproxy.UserServiceImpl&quot;路径下的class对象</span><br><span class="line">        Class aClass &#x3D; Class.forName(&quot;dynamicproxy.UserServiceImpl&quot;);</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F;使用class对象中的方法获取父类加载器</span><br><span class="line">        &#x2F;&#x2F;ClassLoader classLoader &#x3D; userServiceLmpl.getClass().getClassLoader();</span><br><span class="line">        ClassLoader classLoader &#x3D; aClass.getClassLoader();</span><br><span class="line">        &#x2F;&#x2F;Class []  interfaces &#x3D; userServiceLmpl.getClass().getInterfaces();</span><br><span class="line">        &#x2F;&#x2F;获取实现class实现的接口</span><br><span class="line">        Class[] interfaces &#x3D; aClass.getInterfaces();</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F;获取这个类的、构造方法</span><br><span class="line">        Constructor constructors &#x3D; aClass.getConstructor();</span><br><span class="line">        &#x2F;&#x2F;通过构造方法 去实例化这个对象</span><br><span class="line">        UserServiceImpl userServiceLmpl &#x3D; (UserServiceImpl) constructors.newInstance();</span><br><span class="line">        &#x2F;&#x2F;将获取到的对象传入对应的处理器上，通过反射的方式拿到对应的方法切织入</span><br><span class="line">        InvocationHandler logHandler &#x3D; new LogHandler(userServiceLmpl);</span><br><span class="line">        &#x2F;&#x2F;创建动态代理对象的接口</span><br><span class="line">        UserService proxy &#x3D; (UserService) Proxy.newProxyInstance(classLoader, interfaces, logHandler);</span><br><span class="line"></span><br><span class="line">        proxy.select();</span><br><span class="line">        proxy.update();</span><br><span class="line">        ProxyUtils.generateClassFile(userServiceLmpl.getClass(), &quot;UserServiceProxy&quot;);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>被代理的对象</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;**</span><br><span class="line"> * @Author:yuanxindong</span><br><span class="line"> * @Date:2020&#x2F;5&#x2F;90:56</span><br><span class="line"> *&#x2F;</span><br><span class="line">public interface UserService &#123;</span><br><span class="line">    public void select();</span><br><span class="line">    public void update();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">package dynamicproxy;</span><br><span class="line"></span><br><span class="line">import java.lang.reflect.InvocationHandler;</span><br><span class="line">import java.lang.reflect.Method;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * @Author:yuanxindong</span><br><span class="line"> * @Date:2020&#x2F;5&#x2F;90:47</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class LogHandler  implements InvocationHandler &#123;</span><br><span class="line">    private Object  target;</span><br><span class="line">    &#x2F;&#x2F;使用构造方法将代理对象传入代理对象</span><br><span class="line">    public LogHandler(Object target)&#123;</span><br><span class="line">        this.target &#x3D; target;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F;通过反射的方式执行并织入（不知道用的是否合理）代理方法，这个接口实现方法会被newProxyInstance（）方法使用</span><br><span class="line">    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable &#123;</span><br><span class="line">        before();</span><br><span class="line">        &#x2F;&#x2F;</span><br><span class="line">        Object  result  &#x3D; method.invoke(target,args);</span><br><span class="line">        after();</span><br><span class="line">        return result;</span><br><span class="line">    &#125;</span><br><span class="line">    private void before()&#123;</span><br><span class="line">        System.out.println(&quot;log start&quot;+ System.currentTimeMillis());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private  void after()&#123;</span><br><span class="line">        System.out.println(&quot;log end&quot; + System.currentTimeMillis());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>执行结果：<br><img src="https://img-blog.csdnimg.cn/20200515015828273.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h3 id="demo中的InvocationHandler"><a href="#demo中的InvocationHandler" class="headerlink" title="demo中的InvocationHandler"></a>demo中的InvocationHandler</h3><ol>
+<li>从demo中看我们将代理对象的其他方法是在实现InvocationHandler的类中写的，通过实现的invoke（）方法将被代理类织入代理类的方法中 然后在newProxyInstance（）方法中实例化这个 invoke（）方法成为代理对象。如下面的源码所示：<br><img src="https://img-blog.csdnimg.cn/2020051501585994.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3>jdk的动态代理通过Java反射机制实现<br>主要的方法是：</li>
+</ol>
+<ul>
+<li>实现被代理的方法：继承InvocationHandler接口 实现其invoke方法</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">InvocationHandler logHandler &#x3D; new LogHandler(userServiceLmpl);</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>使用Proxy.newProxyInstance(classLoader, interfaces, logHandler)，创建代理对象。</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">UserService proxy &#x3D; (UserService) Proxy.newProxyInstance(classLoader, interfaces, logHandler);</span><br></pre></td></tr></table></figure>
+
+<h3 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h3><ul>
+<li>Spring AOP是怎样实现的呢？？ 也是像我们上面的方法那样织入的吗？？？</li>
+</ul>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/05/17/day01/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-Java中是否直接可以使用enum进行传输" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     

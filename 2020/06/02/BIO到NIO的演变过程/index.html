@@ -6,17 +6,25 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://www.yuanxindong.com">
-  <title>Welcome to Jeff&#39;s blog</title>
+  <title>BIO到NIO的演变过程 | Welcome to Jeff&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="java">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Welcome to Jeff&#39;s blog">
-<meta property="og:url" content="http://www.yuanxindong.com/index.html">
+  <meta name="description" content="背景学习任何东西之前都得知道他是为什么而产生的。任何一个设计，或技术。都是为了解决某个或多个问题而产生的。即BIO到NIO到多路复用再到epollo 再到netty网络编程框架。今天我们来看看这个演进的过程。 IO的演进下图是来自培训机构的一个大佬的图： 什么是IO？ 我自己的理解：从本地磁盘或者网络传输过来的数据的读取和写入的过程。也就是从网卡或者磁盘的数据到应用程序内部（JVM的动态内存中）的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="BIO到NIO的演变过程">
+<meta property="og:url" content="http://www.yuanxindong.com/2020/06/02/BIO%E5%88%B0NIO%E7%9A%84%E6%BC%94%E5%8F%98%E8%BF%87%E7%A8%8B/index.html">
 <meta property="og:site_name" content="Welcome to Jeff&#39;s blog">
-<meta property="og:description" content="java">
+<meta property="og:description" content="背景学习任何东西之前都得知道他是为什么而产生的。任何一个设计，或技术。都是为了解决某个或多个问题而产生的。即BIO到NIO到多路复用再到epollo 再到netty网络编程框架。今天我们来看看这个演进的过程。 IO的演进下图是来自培训机构的一个大佬的图： 什么是IO？ 我自己的理解：从本地磁盘或者网络传输过来的数据的读取和写入的过程。也就是从网卡或者磁盘的数据到应用程序内部（JVM的动态内存中）的">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200602013641915.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200602013736962.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200602013757854.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200602013815931.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200602013839447.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta property="article:published_time" content="2020-06-01T17:39:54.000Z">
+<meta property="article:modified_time" content="2020-06-01T17:40:35.736Z">
 <meta property="article:author" content="yuanxindong">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20200602013641915.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
   
     <link rel="alternative" href="/atom.xml" title="Welcome to Jeff&#39;s blog" type="application/atom+xml">
   
@@ -148,16 +156,14 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
-  
-    <article id="post-BIO到NIO的演变过程" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+            <article id="post-BIO到NIO的演变过程" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/06/02/BIO%E5%88%B0NIO%E7%9A%84%E6%BC%94%E5%8F%98%E8%BF%87%E7%A8%8B/">BIO到NIO的演变过程</a>
+    <h1 class="article-title" itemprop="name">
+      BIO到NIO的演变过程
     </h1>
   
 
@@ -204,16 +210,75 @@
       
 
       
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/06/02/BIO%E5%88%B0NIO%E7%9A%84%E6%BC%94%E5%8F%98%E8%BF%87%E7%A8%8B/">展开全文 >></a>
-        </p>
-      
 
+      
+        
+<div class="share-btn share-icons tooltip-left">
+  <div class="tooltip tooltip-east">
+    <span class="tooltip-item">
+      <a href="javascript:;" class="share-sns share-outer">
+        <i class="icon icon-share"></i>
+      </a>
+    </span>
+    <span class="tooltip-content">
+      <div class="share-wrap">
+        <div class="share-icons">
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="icon icon-weibo"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="icon icon-weixin"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="icon icon-qq"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="icon icon-douban"></i>
+          </a>
+          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a>
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="icon icon-facebook"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="icon icon-twitter"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="icon icon-google"></i>
+          </a>
+        </div>
+      </div>
+    </span>
+  </div>
+</div>
+
+<div class="page-modal wx-share js-wx-box">
+    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//pan.baidu.com/share/qrcode?url=http://www.yuanxindong.com/2020/06/02/BIO%E5%88%B0NIO%E7%9A%84%E6%BC%94%E5%8F%98%E8%BF%87%E7%A8%8B/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div class="mask js-mask"></div>
       
       <div class="clearfix"></div>
     </div>
   </div>
 </article>
+
+  
+<nav id="article-nav">
+  
+  
+    <a href="/2020/05/29/ReentrantLock%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">ReentrantLock源码分析</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
 
 <aside class="wrap-side-operation">
     <div class="mod-side-operation">
@@ -233,907 +298,14 @@
 
 
 
-
-  
-    <article id="post-ReentrantLock源码分析" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/05/29/ReentrantLock%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">ReentrantLock源码分析</a>
-    </h1>
-  
-
-        
-        <a href="/2020/05/29/ReentrantLock%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" class="archive-article-date">
-  	<time datetime="2020-05-28T18:06:47.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-29</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>上一篇讲了Java中的并发问题，那么我们今天来看看来解决兵法因为引起线程安全问题的解决方案之一的“锁”，ReentrantLock </p>
-<h3 id="ReentrantLock的特性"><a href="#ReentrantLock的特性" class="headerlink" title="ReentrantLock的特性"></a>ReentrantLock的特性</h3><ul>
-<li>说到ReentrantLock那我们必须也得提提Sychronized关键字了。看一下对比：<br><img src="https://img-blog.csdnimg.cn/20200529021109621.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>来源：网络</li>
-<li>我们通过伪代码的形式看一下sychronized和reentrant的用法。</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; **************************Synchronized的使用方式**************************</span><br><span class="line">&#x2F;&#x2F; 1.用于代码块</span><br><span class="line">synchronized (this) &#123;&#125;</span><br><span class="line">&#x2F;&#x2F; 2.用于对象</span><br><span class="line">synchronized (object) &#123;&#125;</span><br><span class="line">&#x2F;&#x2F; 3.用于方法</span><br><span class="line">public synchronized void test () &#123;&#125;</span><br><span class="line">&#x2F;&#x2F; 4.可重入</span><br><span class="line">for (int i &#x3D; 0; i &lt; 100; i++) &#123;</span><br><span class="line">	synchronized (this) &#123;&#125;</span><br><span class="line">&#125;</span><br><span class="line">&#x2F;&#x2F; **************************ReentrantLock的使用方式**************************</span><br><span class="line">public void test () throw Exception &#123;</span><br><span class="line">	&#x2F;&#x2F; 1.初始化选择公平锁、非公平锁</span><br><span class="line">	ReentrantLock lock &#x3D; new ReentrantLock(true);</span><br><span class="line">	&#x2F;&#x2F; 2.可用于代码块</span><br><span class="line">	lock.lock();</span><br><span class="line">	try &#123;</span><br><span class="line">		try &#123;</span><br><span class="line">			&#x2F;&#x2F; 3.支持多种加锁方式，比较灵活; 具有可重入特性</span><br><span class="line">			if(lock.tryLock(100, TimeUnit.MILLISECONDS))&#123; &#125;</span><br><span class="line">		&#125; finally &#123;</span><br><span class="line">			&#x2F;&#x2F; 4.手动释放锁</span><br><span class="line">			&#x2F;&#x2F;在此处需要特别的注意，必须使用finally里面进行解锁，当上面代码异常的时候也能解锁。</span><br><span class="line">			lock.unlock()</span><br><span class="line">		&#125;</span><br><span class="line">	&#125; finally &#123;</span><br><span class="line">		lock.unlock();</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="reentrantLock的实现"><a href="#reentrantLock的实现" class="headerlink" title="reentrantLock的实现"></a>reentrantLock的实现</h3><ol>
-<li>首先我们得明确reentrantLock内部做了什么事情</li>
-<li>reentrntLock 各个类的UML图</li>
-</ol>
-<p><img src="https://img-blog.csdnimg.cn/20200529021156245.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述">####  几个重要的方法<br>    1. ReentrantLock 实现了Lock接口<br>    2. 抽象类Sync是ReentrntLock的重要组成部分其中实现<br>    3. FairSync及NonFairSync均继承于Sync<br>    4. Sync继承抽象类了AbstractQueuedSynchronizer；<br>    5. AbstractQueuedSynchronizer继承了抽象类AbstractOwnableSynchronizer。</p>
-<ol>
-<li>看代码</li>
-</ol>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F;reentrntLock的两个构造方法</span><br><span class="line">public ReentrantLock() &#123;</span><br><span class="line">    sync &#x3D; new NonfairSync();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public ReentrantLock(boolean fair) &#123;</span><br><span class="line">    sync &#x3D; fair ? new FairSync() : new NonfairSync();</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;根据初始化的sync掉对应的方法，如果初始化的是公平锁就去调用公平锁的非公平就去调用对应的非公平锁。</span><br><span class="line">    public void lock() &#123;</span><br><span class="line">        sync.lock();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    &#x2F;**</span><br><span class="line">     * Sync object for fair locks</span><br><span class="line">     * 公平锁 重写Sycn类的lock抽象方法</span><br><span class="line">     * 初始化的时候构造出来的</span><br><span class="line">     *&#x2F;</span><br><span class="line">    static final class FairSync extends Sync &#123;</span><br><span class="line">        private static final long serialVersionUID &#x3D; -3000897897090466540L;</span><br><span class="line"></span><br><span class="line">        final void lock() &#123;</span><br><span class="line">        &#x2F;&#x2F;由于继承了Sync Sync又继承了AbstractQueuedSynchronizer，于是直接调用AQS这个抽象类的方</span><br><span class="line">            acquire(1);</span><br><span class="line">        &#125;</span><br><span class="line">    &#x2F;**</span><br><span class="line">    </span><br><span class="line">            &#x2F;**</span><br><span class="line">         * Performs lock.  Try immediate barge, backing up to normal</span><br><span class="line">         * 非公平锁的实现  在刚开始reenTrant进行构造方法进行初始化的时候就会</span><br><span class="line">         * 将sync.lock()方法进行对应的实现</span><br><span class="line">         *&#x2F;</span><br><span class="line">        final void lock() &#123;</span><br><span class="line">            if (compareAndSetState(0, 1))</span><br><span class="line">                setExclusiveOwnerThread(Thread.currentThread());</span><br><span class="line">            else</span><br><span class="line">                acquire(1);</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
-<p>1.从上面的方法我们可以看的出</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line">* acqutre这个方法是为了获取锁，更改</span><br><span class="line">*&#x2F;</span><br><span class="line"> public final void acquire(int arg) &#123;</span><br><span class="line">        if (!tryAcquire(arg) &amp;&amp;</span><br><span class="line">            acquireQueued(addWaiter(Node.EXCLUSIVE), arg))</span><br><span class="line">            selfInterrupt();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">&#x2F;**</span><br><span class="line">*</span><br><span class="line">*&#x2F;</span><br><span class="line"> protected final boolean tryAcquire(int acquires) &#123;</span><br><span class="line">            final Thread current &#x3D; Thread.currentThread();</span><br><span class="line">            int c &#x3D; getState();</span><br><span class="line">            if (c &#x3D;&#x3D; 0) &#123;</span><br><span class="line">                if (!hasQueuedPredecessors() &amp;&amp;</span><br><span class="line">                    compareAndSetState(0, acquires)) &#123;</span><br><span class="line">                    setExclusiveOwnerThread(current);</span><br><span class="line">                    return true;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            else if (current &#x3D;&#x3D; getExclusiveOwnerThread()) &#123;</span><br><span class="line">                int nextc &#x3D; c + acquires;</span><br><span class="line">                if (nextc &lt; 0)</span><br><span class="line">                    throw new Error(&quot;Maximum lock count exceeded&quot;);</span><br><span class="line">                setState(nextc);</span><br><span class="line">                return true;</span><br><span class="line">            &#125;</span><br><span class="line">            return false;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-<ol start="2">
-<li>太难了 ，明天继续</li>
-</ol>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/05/29/ReentrantLock%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-秒懂Java并发和线程安全" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/05/27/%E7%A7%92%E6%87%82Java%E5%B9%B6%E5%8F%91%E5%92%8C%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/">秒懂Java并发和线程安全</a>
-    </h1>
-  
-
-        
-        <a href="/2020/05/27/%E7%A7%92%E6%87%82Java%E5%B9%B6%E5%8F%91%E5%92%8C%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/" class="archive-article-date">
-  	<time datetime="2020-05-26T17:13:34.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-27</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>在平时写代码的时候我们经常会说“这会不会有线程安全问题，是不是得加把锁呢？”，细细的品一下这句话，是包涵很多知识点在里面。线程？，线程安全？，什么时候才会出现线程安全？Java中的锁？ 等等。</p>
-<h3 id="知识点"><a href="#知识点" class="headerlink" title="知识点"></a>知识点</h3><h4 id="什么是线程？"><a href="#什么是线程？" class="headerlink" title="什么是线程？"></a>什么是线程？</h4><ol>
-<li>”线程是承载代码运行的载体“ 这是我脑子里飘出来的第一句话。</li>
-<li>看看WIKI百科是如何讲的： <em>线程（英语：thread）是操作系统能够进行运算调度的最小单位。大部分情况下，它被包含在进程之中，是进程中的实际运作单位。一条线程指的是进程中一个单一顺序的控制流，一个进程中可以并发多个线程，每条线程并行执行不同的任务。在Unix System V及SunOS中也被称为轻量进程（lightweight processes），但轻量进程更多指内核线程（kernel thread），而把用户线程（user thread）称为线程。</em></li>
-<li>好像我说的也没什么毛病，再具体总结一下“线程是操作系统调度程序执行的最小单位，线程是包含在进程里的，一个进程可以包含多个线程”。<h4 id="什么是线程的并发和并行"><a href="#什么是线程的并发和并行" class="headerlink" title="什么是线程的并发和并行"></a>什么是线程的并发和并行</h4></li>
-<li>并发 ： 指在某个时间段内，多个任务交替处理的能力。每个CPU不可能只顾着执行某一个线程，而不管其他线程，导致其他线程一直处于等待状态。所以CPU把可执行的时间片段 均匀的分为若干份，每个线程执行一段时间后，记录当前的工作状态，释放相关的执行资源并进入等待状态，让其他线程抢占CPU资源。</li>
-<li>并行：并行是指同时处理多任务的能力，比如多个CPU同时执行多个任务。<br>其实我们也可以举个列子： KTV唱歌的时候一个话筒，一首歌，被大家轮流使用去唱，就是并发（只不过这个多成很快，完全柑桔不到），多个人同时去唱就是并行。</li>
-<li>Java中一个线程“朝生夕死”的过程<br><img src="https://img-blog.csdnimg.cn/20200527010751609.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><ul>
-<li>创建一个线程：有三种方法，1. 继承Thread的类 2.实现Runable接口 3.实现Callable接口</li>
-<li>调用我们继承或实现接口的方法调用start方法启动线程，此时线程处于就绪状态（RUNABLE）这个时候线程被再一次调用会跑出异常。</li>
-<li>接下来如果顺利的话会进入执行状态（RUNNING），也就是run（）方法被执行。但是不顺利的话就会属于阻塞状态。</li>
-<li>进入阻塞状态有这几种方式：<ol>
-<li>同步阻塞：锁被其他线程占用，</li>
-<li>主动阻塞： 调用Thread方法主动让出CPU的执行权，比如sleep（），join（）等</li>
-<li>等待阻塞： 执行了wait（）<ul>
-<li>终止状态（DEAD），run（）执行结束，或者因异常推出后的状态，此状态不可逆转。</li>
-</ul>
-</li>
-</ol>
-</li>
-</ul>
-</li>
-<li>在并发环境下会导致哪些问题呢？<ul>
-<li>那就是在线程之间操作一个共享变量的时候会出现程序预期之外的结果。这也就是线程的安全问题</li>
-<li>WIKI对线程安全的描述：<em>“线程安全是程式设计中的术语，指某个函数、函数库在多线程环境中被调用时，能够正确地处理多个线程之间的共享变量，使程序功能正确完成。”</em><h4 id="如何保证线程安全呢？"><a href="#如何保证线程安全呢？" class="headerlink" title="如何保证线程安全呢？"></a>如何保证线程安全呢？</h4></li>
-</ul>
-</li>
-<li>数据单线程内可见。单线程总是安全的。因为你只针对这个线程可见那么其他的线程对此参数做不了更改了。在我们平时在方法内定义的变量也就是局部变量，他就是安全的，局部变量会被存储在独立的虚拟机栈中的局部变量表中，虚拟机栈是在线程的私有区。所以与其他的线程是没有关联的。</li>
-<li>只读对象。那就是被定义为final的对象，且内部属性也得被定义为final不可变，一个对象被final修饰只是这个引用不会改变，但是内部的数据是可以改变的。所以内部属性也得被final修饰。如String，Integer等<br><img src="https://img-blog.csdnimg.cn/20200527010957535.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></li>
-<li>线程安全类。currentHashMap，HashTable，StringBuffer等买这些都是线程安全类其中内部方法都被加锁了。下图shihashTable的get方法 。currentHashMap采用的是分段锁hashTable的升级版。<br><img src="https://img-blog.csdnimg.cn/2020052701102862.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></li>
-<li>同步与锁机制。如果想要对某个对象进行并发操作，但是又不属于上述三类，那么我们开发就得自己去控制了，也是和他们类似的方式，让操作这个对象通过锁的方式同步执行。我们在日常开发中熟知的锁有两个<ul>
-<li>JUC 包中的sychronized，可重入锁，支持公平锁和公平锁。其内部实现是通过JUC包中的AQS，但是AQS中也使用到了JVM 的锁Sychronized。</li>
-<li>sychronized关键字是JVM底层实现的锁，在每一个对象都会有一个对象头，其中对象头中有几个字节专门表示对象的锁状态，在JDK1.6之前sychronized还是一个比较重量极的锁，但是后续进行了优化，就是锁拥有了几个状态，自旋锁，轻量级锁，重量级锁。使其效率提高了起来，且sychronized是非公平锁。<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
-<li>主要还是介绍了并发和Java中的线程，并发的概念，线程通过获取CPU的时间便进行交替执行的过程成为并发。并行就是真正的同时去执行几个线程。</li>
-<li>并发操作导致线程的安全问题，多个线程并发操作一个数据，导致数据出现程序执行意料之外的情况。</li>
-<li>防止线程安全的方式和现有方法或类。也就是两点“要么只读”和“要么加锁”。</li>
-<li>明天更新锁两把锁“sychronized”，“sychronized”的详细情况<h3 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h3>通过反射机制或字节码操纵技术会将不变的对象变化掉吗？</li>
-</ul>
-</li>
-</ul>
-</li>
-</ol>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/05/27/%E7%A7%92%E6%87%82Java%E5%B9%B6%E5%8F%91%E5%92%8C%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-final关键字你真的会用" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/05/26/final%E5%85%B3%E9%94%AE%E5%AD%97%E4%BD%A0%E7%9C%9F%E7%9A%84%E4%BC%9A%E7%94%A8/">final关键字你真的会用?</a>
-    </h1>
-  
-
-        
-        <a href="/2020/05/26/final%E5%85%B3%E9%94%AE%E5%AD%97%E4%BD%A0%E7%9C%9F%E7%9A%84%E4%BC%9A%E7%94%A8/" class="archive-article-date">
-  	<time datetime="2020-05-25T17:05:35.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-26</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>codeReview的时候，看到各种final关键字的”骚“操作，今天认真复习一下final关键字。<br>我们都知道final关键字可以使用到类上，也可以使用道方法上，也可以使用到数据上，但是他的使用会为我们提供哪些好处呢？</p>
-<h3 id="final关键自的使用"><a href="#final关键自的使用" class="headerlink" title="final关键自的使用"></a>final关键自的使用</h3><p>Java关键字final通常指的是“这是无法改变的”不想作出改变的原因有两种：设计和效率。由于一般使用这一方面对final不是很了解（例如我）导致使用目的不是很明确。导致使用错误。而达到反效果。final可以修饰数据，方法，和类</p>
-<h4 id="final数据"><a href="#final数据" class="headerlink" title="final数据"></a>final数据</h4><ol>
-<li>被final修饰过的数据，也就是向编译器说这个数据是不可改变了。 或者说在运行时初始化赋值后不可改变。</li>
-<li>在很多情况下我们都需要使用到静态编译器不变的常量。列如我们为了防止代码全局创建多个相同的数据，那我们就在全局定义一些“永不改变的编译时常量”，我们随便打开个源码看看大佬们对final的使用jUC包中的ThreadPoolExcutor类中的应用：</li>
-</ol>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"> *    When pool is empty</span><br><span class="line"> * TIDYING -&gt; TERMINATED</span><br><span class="line"> *    When the terminated() hook method has completed</span><br><span class="line"> *</span><br><span class="line"> * Threads waiting in awaitTermination() will return when the</span><br><span class="line"> * state reaches TERMINATED.</span><br><span class="line"> *</span><br><span class="line"> * Detecting the transition from SHUTDOWN to TIDYING is less</span><br><span class="line"> * straightforward than you&#39;d like because the queue may become</span><br><span class="line"> * empty after non-empty and vice versa during SHUTDOWN state, but</span><br><span class="line"> * we can only terminate if, after seeing that it is empty, we see</span><br><span class="line"> * that workerCount is 0 (which sometimes entails a recheck -- see</span><br><span class="line"> * below).</span><br><span class="line"> *&#x2F;</span><br><span class="line">private final AtomicInteger ctl &#x3D; new AtomicInteger(ctlOf(RUNNING, 0));</span><br><span class="line">private static final int COUNT_BITS &#x3D; Integer.SIZE - 3;</span><br><span class="line">private static final int CAPACITY   &#x3D; (1 &lt;&lt; COUNT_BITS) - 1;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; runState is stored in the high-order bits</span><br><span class="line">private static final int RUNNING    &#x3D; -1 &lt;&lt; COUNT_BITS;</span><br><span class="line">private static final int SHUTDOWN   &#x3D;  0 &lt;&lt; COUNT_BITS;</span><br><span class="line">private static final int STOP       &#x3D;  1 &lt;&lt; COUNT_BITS;</span><br><span class="line">private static final int TIDYING    &#x3D;  2 &lt;&lt; COUNT_BITS;</span><br><span class="line">private static final int TERMINATED &#x3D;  3 &lt;&lt; COUNT_BITS;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; Packing and unpacking ctl</span><br><span class="line">private static int runStateOf(int c)     &#123; return c &amp; ~CAPACITY; &#125;</span><br><span class="line">private static int workerCountOf(int c)  &#123; return c &amp; CAPACITY; &#125;</span><br><span class="line">private static int ctlOf(int rs, int wc) &#123; return rs | wc; &#125;</span><br><span class="line"></span><br><span class="line">&#x2F;*</span><br><span class="line"> * Bit field accessors that don&#39;t require unpacking ctl.</span><br><span class="line"> * These depend on the bit layout and on workerCount being never negative.</span><br><span class="line"> *&#x2F;</span><br></pre></td></tr></table></figure>
-
-<p>将线程池的代表的状态值使用static和final修饰成为了一个“永不改变的编译时常量”。在这个过程中也不怕被别有用心的人通过某种方式（类似与Java发射）进行修改等。 staitc关键字保证在编译期赋值（static修饰的数据会在类加载过程中分配内存空间且赋值），final保证不会变。<br>类加载的过程：<br><img src="https://img-blog.csdnimg.cn/20200526010038255.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>其中在准备阶段就会将final修饰的数据给赋予真正的值。<br><img src="https://img-blog.csdnimg.cn/20200526010131978.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>3. 如果final修饰的这个数据是一个对象的时候，他这个对象引用是不会改变的，但是对象自身还是可以改变的，java自身是没有提供保证对象不可变的途径如下代码：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">import lombok.Data;</span><br><span class="line">import lombok.ToString;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * @author yuanxindong</span><br><span class="line"> *&#x2F;</span><br><span class="line">@ToString</span><br><span class="line">@Data</span><br><span class="line">public class FinalUse &#123;</span><br><span class="line">    private String name &#x3D; &quot;yaunxindong&quot;;</span><br><span class="line">    private String gender&#x3D; &quot;N&quot;;</span><br><span class="line">    static final FinalUse finalUse &#x3D;  new FinalUse();</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        System.out.println(&quot;修改前&quot; +finalUse.toString());</span><br><span class="line">        finalUse.setGender(&quot;dog&quot;);</span><br><span class="line">        System.out.println(&quot;修改后&quot;+finalUse.toString());</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>运行结果：<br>[外链图片转存失败,源站可能有防盗链机制,建议将图片保存下来直接上传(img-iptzY06K-1590425614844)(<a href="http://note.youdao.com/yws/res/13486/9A6FDF832FD34E3085E8CB51C9045F1F)]" target="_blank" rel="noopener">http://note.youdao.com/yws/res/13486/9A6FDF832FD34E3085E8CB51C9045F1F)]</a><br>如果说我们不希望对象也不被改变，那么我们是否直接使用final进行修饰其中内部的属性，在这个时候本分感觉，这样的话我们就可以使用枚举了。<br>4. 使用final 修饰方法中的参数，这样修饰的用意是不让方法内修改这个参数，这个用法之前一直没见过，今天看见同事使用了，使用场景是一个业务埋点工具类。所有入参数被修饰。这样有好处吗？有把，如果另一个人维护代码的时候把埋点数据改掉了。。。。。。YY 不敢确定</p>
-<h4 id="final方法"><a href="#final方法" class="headerlink" title="final方法"></a>final方法</h4><ol>
-<li>使用final将方法锁定以防止任何继承类修改他的含义。这是出于设计的考虑：想要确保在继承中使方法行为保持不变，并且不会被覆盖</li>
-<li>还有就是效率，在过去如果将一个方法指明为final，就是同意编译器将针对该方法的所有调用都转为内嵌调用。（将参数压入栈，跳至方法代码处执行，然后跳回并清理栈中的参数，处理返回值）并且以方法体中的实际代码的副本来代替方法调用。这将消除方法调用的开销。但是就怕但是，hotspot虚拟机中已经优化掉了上面所说的内存消耗问题。所以也不用使用final来进行优化了（我今天就用final修饰了方法）。</li>
-<li>private 修饰的方法，已经隐式指定为final了，但是使用private 修饰的方法仍然可以修饰被final修饰但是没有什么卵用。<h4 id="final类"><a href="#final类" class="headerlink" title="final类"></a>final类</h4></li>
-<li>当某个类的整体被定义为final的时候，就表明了我们不想把这个类被被人使用，他也就不可以被继承。换句话说也就是你对该类的设计就是不需要做任何变动，或出于安全考虑，你不希望他有子类。 </li>
-<li>被final修饰的类的方法也会隐式成为final，但也可以添加final 但是也不会带来任何意义。</li>
-</ol>
-<h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><p>final的作用就是为了更加规范的设计，和更高的效率。正是因为牵扯到了设计和效率，有时他们会产生冲突，我个人觉得在效率方面的是微乎其微，且我们常使用的hotspot已经️对这方面优化了，所以我个人观点就是更偏向设计。</p>
-<h4 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h4><p>在JVM层面final关键字是起了什么作用呢？</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/05/26/final%E5%85%B3%E9%94%AE%E5%AD%97%E4%BD%A0%E7%9C%9F%E7%9A%84%E4%BC%9A%E7%94%A8/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-Spring-源码解析-IOC读取xml配置（一）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/05/25/Spring-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-IOC%E8%AF%BB%E5%8F%96xml%E9%85%8D%E7%BD%AE%EF%BC%88%E4%B8%80%EF%BC%89/">Spring 源码解析 IOC读取xml配置（一）</a>
-    </h1>
-  
-
-        
-        <a href="/2020/05/25/Spring-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-IOC%E8%AF%BB%E5%8F%96xml%E9%85%8D%E7%BD%AE%EF%BC%88%E4%B8%80%EF%BC%89/" class="archive-article-date">
-  	<time datetime="2020-05-24T16:33:10.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-25</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><h4 id="看源码的初衷是什么？"><a href="#看源码的初衷是什么？" class="headerlink" title="看源码的初衷是什么？"></a>看源码的初衷是什么？</h4><ul>
-<li>网上大佬的说法： <em>看源码最大的好处是可以开阔思维，提升架构设计能力。有些东西仅靠书本和自己思考是很难学到的，必须通过看源码，看别人如何设计，然后思考为何这样设计才能领悟到。<br>能力的提高不在于你写了多少代码，做了多少项目，而在于给你一个业务场景时，你是否能拿出几种靠谱的解决方案，并且说出各自的优缺点。而如何才能拿出来，一来靠经验，二来靠归纳总结，而看源码可以快速增加你的经验。</em></li>
-<li>本来还想发表一下自己的看法但是看了大佬的看法确实是这样，为了学习人家的设计思想，编码风格等（==并不是为了记住他的代码Method  name，class name 等==），人家写的代码可是被千千万万个程序员使用过和验证过的。还有就是也是为了我们这些上层比较懒惰且技术不精湛的程序员做了一层抽象和封装吧。是啊，从计算机硬件到我们可以读懂的代码可不都是大佬们呕心沥血的为我们做抽象而得到的。想成为大佬就得学习大佬的代码，都也是成为大佬的必要经历的途径之一。<h3 id="Spring-IOC源码实现"><a href="#Spring-IOC源码实现" class="headerlink" title="Spring IOC源码实现"></a>Spring IOC源码实现</h3><h4 id="什么是IOC？"><a href="#什么是IOC？" class="headerlink" title="什么是IOC？"></a>什么是IOC？</h4></li>
-<li>在wiki百科中是这样介绍IOC的：<em>控制反转（Inversion of Control，缩写为IoC），是面向对象编程中的一种设计原则，可以用来减低计算机代码之间的耦合度。其中最常见的方式叫做依赖注入（Dependency Injection，简称DI），还有一种方式叫“依赖查找”（Dependency Lookup）。通过控制反转，对象在被创建的时候，由一个调控系统内所有对象的外界实体，将其所依赖的对象的引用传递(注入)给它。</em></li>
-<li>个人理解：在平时我们有时会讲到“IOC容器”这个说法对吗？也是对的啊，他只是IOC这个原则中的一个放置bean的容器（其实也就是个Map），IOC也就是控制反转，在起初我们在创建对象的时候是通过new 一个实例来实现的由于这样的方式，很麻烦，每用到一个地方就得创建一个实例，且这种方式对象的创建会很耗费内存（想一下对象的创建过程）。所以大佬们想了一个办法，那就是我创建一个对象然后我把他托管起来，然后有地方有标记用到我就把它给主动注入（此处就是依赖注入（DI）），不用用到的地方去动来获取这个对象。大概思考一下为什么这么最做呢？那就大概是为了性能呗（想一下，我们学的数据结构算法设计模式等都是为了啥，不都是为了写出来的代码耗费空间少，性能好，好维护）。还有就是借用 Spring boot 编程思想的作者小马哥所说：“好莱坞法则，在找演员的时候，你不要来找我我去找你”。这也真的是很形象了。<h3 id="Spring中是如何实现IOC设计原则的？"><a href="#Spring中是如何实现IOC设计原则的？" class="headerlink" title="Spring中是如何实现IOC设计原则的？"></a>Spring中是如何实现IOC设计原则的？</h3><h4 id="1-bean注入到IOC容器中"><a href="#1-bean注入到IOC容器中" class="headerlink" title="1. bean注入到IOC容器中"></a>1. bean注入到IOC容器中</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">package test;</span><br><span class="line"></span><br><span class="line">import Bean.Person;</span><br><span class="line">import org.junit.Test;</span><br><span class="line">import org.springframework.beans.factory.BeanFactory;</span><br><span class="line">import org.springframework.beans.factory.xml.XmlBeanFactory;</span><br><span class="line">import org.springframework.core.io.ClassPathResource;</span><br><span class="line"></span><br><span class="line">import java.util.ArrayList;</span><br><span class="line">import java.util.Collection;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.List;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> *</span><br><span class="line"> * @Author yuanxindong</span><br><span class="line"> *&#x2F;</span><br><span class="line">@SuppressWarnings(&quot;deprecation&quot;)</span><br><span class="line">public class BeanFactoryTest &#123;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * configReader 用于读取并配置文件，读取然后放在内存中</span><br><span class="line">     * ReflectionUtil 用于配置文件中的配置进行反射是列化</span><br><span class="line">     * App 用于整个逻辑的串联</span><br><span class="line">     *&#x2F;</span><br><span class="line">    @Test</span><br><span class="line">    public  void testSimpleLoad()&#123;</span><br><span class="line">        BeanFactory bf  &#x3D; new XmlBeanFactory(new ClassPathResource(&quot;bean.xml&quot;));</span><br><span class="line">        Person bean  &#x3D; (Person)bf.getBean(&quot;Person&quot;);</span><br><span class="line">        System.out.println(&quot;bean&quot;+ bean.toString());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-配置文件xml </li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version&#x3D;&quot;1.0&quot; encoding&#x3D;&quot;UTF-8&quot;?&gt;</span><br><span class="line">&lt;beans xmlns&#x3D;&quot;http:&#x2F;&#x2F;www.springframework.org&#x2F;schema&#x2F;beans&quot;</span><br><span class="line">       xmlns:xsi&#x3D;&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2001&#x2F;XMLSchema-instance&quot;</span><br><span class="line">       xsi:schemaLocation&#x3D;&quot;http:&#x2F;&#x2F;www.springframework.org&#x2F;schema&#x2F;beans</span><br><span class="line">                        http:&#x2F;&#x2F;www.springframework.org&#x2F;schema&#x2F;beans&#x2F;spring-beans.xsd&quot;&gt;</span><br><span class="line">    &lt;bean id &#x3D; &quot;Person&quot; class &#x3D; &quot;Bean.Person&quot;&gt;</span><br><span class="line">        &lt;constructor-arg index&#x3D;&quot;0&quot; value&#x3D;&quot;1&quot;&#x2F;&gt;</span><br><span class="line">        &lt;constructor-arg index&#x3D;&quot;1&quot; value&#x3D;&quot;2&quot;&#x2F;&gt;</span><br><span class="line">    &lt;&#x2F;bean&gt;</span><br><span class="line"></span><br><span class="line">&lt;&#x2F;beans&gt;</span><br></pre></td></tr></table></figure>
-<p>Person实例需要注入的bean</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">package Bean;</span><br><span class="line"></span><br><span class="line">import lombok.Data;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * @Author yuanxibndong</span><br><span class="line"> *&#x2F;</span><br><span class="line">@Data</span><br><span class="line">public class Person &#123;</span><br><span class="line">    private String name;</span><br><span class="line">    private Integer age;</span><br><span class="line">    private String gender;</span><br><span class="line"></span><br><span class="line">    public Person(String name, int age) &#123;</span><br><span class="line">        this.name &#x3D; name;</span><br><span class="line">        this.age &#x3D; age;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<ul>
-<li>通过上面的代码我们可以看出来首先通过xml文件读取配置<ol>
-<li>通过classPathResource进行封装。在java中将不同的来源抽象为URL，URL有没有基本的方法，所以载spring中会用到一些基本方法所以就做了一层抽象结构：Resource结构</li>
-<li></li>
-</ol>
-</li>
-<li>从中我们可以看到很很多基础方法 明天继续》》》》》》》》》》</li>
-</ul>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/05/25/Spring-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-IOC%E8%AF%BB%E5%8F%96xml%E9%85%8D%E7%BD%AE%EF%BC%88%E4%B8%80%EF%BC%89/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-spring-state-machine" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/05/23/spring-state-machine/">spring state machine</a>
-    </h1>
-  
-
-        
-        <a href="/2020/05/23/spring-state-machine/" class="archive-article-date">
-  	<time datetime="2020-05-23T09:45:32.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-23</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h1 id="简单入门"><a href="#简单入门" class="headerlink" title="简单入门"></a>简单入门</h1><h2 id="简单状态机（状态无层次结构，不存在子状态）"><a href="#简单状态机（状态无层次结构，不存在子状态）" class="headerlink" title="简单状态机（状态无层次结构，不存在子状态）"></a>简单状态机（状态无层次结构，不存在子状态）</h2><p>Turnstile是一个简单的设备，如果付款完成，您可以访问该设备，并且使用状态机进行建模非常简单。 最简单的形式是只有两个状态，LOCKED和UNLOCKED。 如果您尝试通过它或您付款，可能会发生两个事件，COIN和PUSH。</p>
-<p><img src="https://docs.spring.io/spring-statemachine/docs/1.2.8.RELEASE/reference/htmlsingle/images/statechart1.png" alt="Turnstile"></p>
-<p><strong>状态</strong></p>
-<pre><code>public enum States {
-    LOCKED, UNLOCKED
-}</code></pre><p><strong>事件</strong> </p>
-<pre><code>public enum Events {
-    COIN, PUSH
-}</code></pre><p><strong>状态机配置</strong></p>
-<pre><code>@Configuration
-@EnableStateMachine
-static class StateMachineConfig
-        extends EnumStateMachineConfigurerAdapter&lt;States, Events&gt; {
-
-    @Override
-    public void configure(StateMachineStateConfigurer&lt;States, Events&gt; states)
-            throws Exception {
-        states
-            .withStates()
-                .initial(States.LOCKED)   //配置初始状态
-                .states(EnumSet.allOf(States.class)); //导入所有状态
-    }
-
-    @Override
-    public void configure(StateMachineTransitionConfigurer&lt;States, Events&gt; transitions)
-            throws Exception {
-        transitions            //配置transition
-            .withExternal()   
-                .source(States.LOCKED)    //当接收到COIN事件
-                .target(States.UNLOCKED)  //LOCKED--&gt; UNLOCKED
-                .event(Events.COIN)
-                .and()
-            .withExternal()
-                .source(States.UNLOCKED) //当接收到PUSH事件
-                .target(States.LOCKED)   //UNLOCKED--&gt; LOCKED
-                .event(Events.PUSH);
-        }
-
-}</code></pre><h2 id="多层次状态机"><a href="#多层次状态机" class="headerlink" title="多层次状态机"></a>多层次状态机</h2><p>Showcase是一个复杂的状态机，显示所有可能的转换拓扑结构，最多可达四级状态嵌套。<br><img src="https://docs.spring.io/spring-statemachine/docs/1.2.8.RELEASE/reference/htmlsingle/images/statechart2.png" alt="Showcase"></p>
-<p><strong>状态</strong> </p>
-<pre><code>public enum States {
-    S0, S1, S11, S12, S2, S21, S211, S212
-}</code></pre><p><strong>事件</strong> </p>
-<pre><code>public enum Events {
-    A, B, C, D, E, F, G, H, I
-}</code></pre><p><strong>状态机配置</strong><br>状态关系</p>
-<pre><code>@Override
-public void configure(StateMachineStateConfigurer&lt;States, Events&gt; states)
-        throws Exception {
-    states
-        .withStates()
-            .initial(States.S0, fooAction())   //初始化状态，初始化动作
-            .state(States.S0)                   //导入状态
-            .and()
-            .withStates()                      //配置S0的子状态S1  
-                .parent(States.S0)         
-                .initial(States.S1)
-                .state(States.S1)
-                .and()
-                .withStates()                     //配置S1的子状态S11、S12
-                    .parent(States.S1)       
-                    .initial(States.S11)
-                    .state(States.S11)
-                    .state(States.S12)
-                    .and()
-            .withStates()                      //配置S0的子状态S2  
-                .parent(States.S0)
-                .state(States.S2)
-                .and()
-                .withStates()                  //配置S2的子状态S21、S22
-                    .parent(States.S2)
-                    .initial(States.S21)
-                    .state(States.S21)
-                    .and()
-                    .withStates()              //配置S21的子状态S211、S212
-                        .parent(States.S21)
-                        .initial(States.S211)
-                        .state(States.S211)
-                        .state(States.S212);
-    }</code></pre><p>状态转移关系</p>
-<pre><code>@Override
-public void configure(StateMachineTransitionConfigurer&lt;States, Events&gt; transitions)
-    throws Exception {
-        transitions
-            .withExternal()            
-                .source(States.S1).target(States.S1).event(Events.A)    //A：S1-&gt;S1
-                .guard(foo1Guard())                                     //配置guard
-                .and()
-            .withExternal()
-                .source(States.S1).target(States.S11).event(Events.B)   //B:S1-&gt;S11
-                .and()
-            .withExternal()
-                .source(States.S21).target(States.S211).event(Events.B) //B:S21-&gt;S211
-                .and()
-            .withExternal()
-                .source(States.S1).target(States.S2).event(Events.C)    //C:S1-&gt;S2
-                .and()
-            .withExternal()
-                .source(States.S2).target(States.S1).event(Events.C)    //C:S2-&gt;S1
-                .and()
-            .withExternal()
-                .source(States.S1).target(States.S0).event(Events.D)    //D:S1-&gt;S0
-                .and()
-            .withExternal()
-                .source(States.S211).target(States.S21).event(Events.D) //D:S211-&gt;S21
-                .and()
-            .withExternal()
-                .source(States.S0).target(States.S211).event(Events.E)  //E:S0-&gt;S211
-                .and()
-            .withExternal()
-                .source(States.S1).target(States.S211).event(Events.F)  //F:S1-&gt;S211
-                .and()
-            .withExternal()
-                .source(States.S2).target(States.S11).event(Events.F)   //F:S2-&gt;S11
-                .and()
-            .withExternal()
-                .source(States.S11).target(States.S211).event(Events.G) //G:S11-&gt;S211
-                .and()
-            .withExternal()
-                .source(States.S211).target(States.S0).event(Events.G)  //G:S211-&gt;S0
-                .and()
-            .withInternal()                                                //内部转移，无状态变化 
-                .source(States.S0).event(Events.H)
-                .guard(foo0Guard())
-                .action(fooAction())
-                .and()    
-            .withInternal()                                                //内部转移，无状态变化 
-                .source(States.S2).event(Events.H)
-                .guard(foo1Guard())
-                .action(fooAction())
-                .and()
-            .withInternal()                                             //内部转移，无状态变化    
-                .source(States.S1).event(Events.H)
-                .and()
-            .withExternal()                                             //I:S11-&gt;S12 
-                .source(States.S11).target(States.S12).event(Events.I)
-                .and()
-            .withExternal()                                             //I:S211-&gt;S212
-                .source(States.S211).target(States.S212).event(Events.I)
-                .and()
-            .withExternal()                                             //I:S12-&gt;S212
-                .source(States.S12).target(States.S212).event(Events.I);
-    }</code></pre><p><strong>action&amp;guard</strong></p>
-<pre><code>@Bean
-public FooGuard foo0Guard() {
-    return new FooGuard(0);
-}
-
-@Bean
-public FooGuard foo1Guard() {
-    return new FooGuard(1);
-}
-
-@Bean
-public FooAction fooAction() {
-    return new FooAction();
-}
-
-private static class FooAction implements Action&lt;States, Events&gt; {
-
-    @Override
-    public void execute(StateContext&lt;States, Events&gt; context) {
-        Map&lt;Object, Object&gt; variables = context.getExtendedState().getVariables();
-        Integer foo = context.getExtendedState().get(&quot;foo&quot;, Integer.class);
-        if (foo == null) {
-            log.info(&quot;Init foo to 0&quot;);
-            variables.put(&quot;foo&quot;, 0);
-        } else if (foo == 0) {
-            log.info(&quot;Switch foo to 1&quot;);
-            variables.put(&quot;foo&quot;, 1);
-        } else if (foo == 1) {
-            log.info(&quot;Switch foo to 0&quot;);
-            variables.put(&quot;foo&quot;, 0);
-        }
-    }
-}
-
-
-private static class FooGuard implements Guard&lt;States, Events&gt; {
-
-    private final int match;
-
-    public FooGuard(int match) {
-        this.match = match;
-    }
-
-    @Override
-    public boolean evaluate(StateContext&lt;States, Events&gt; context) {
-        Object foo = context.getExtendedState().getVariables().get(&quot;foo&quot;);
-        return !(foo == null || !foo.equals(match));
-    }
-}</code></pre>
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/05/23/spring-state-machine/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-mongoDB白皮书" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/05/21/mongoDB%E7%99%BD%E7%9A%AE%E4%B9%A6/">mongoDB白皮书</a>
-    </h1>
-  
-
-        
-        <a href="/2020/05/21/mongoDB%E7%99%BD%E7%9A%AE%E4%B9%A6/" class="archive-article-date">
-  	<time datetime="2020-05-21T05:14:01.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-21</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        
-
-	<div class="row">
-    <embed src="https://webassets.mongodb.com/mongodb-architecture-guide-overview_cn.pdf" width="100%" height="550" type="application/pdf">
-	</div>
-
-
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/05/21/mongoDB%E7%99%BD%E7%9A%AE%E4%B9%A6/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-520初始MongoDB" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/05/21/520%E5%88%9D%E5%A7%8BMongoDB/">520初始MongoDB</a>
-    </h1>
-  
-
-        
-        <a href="/2020/05/21/520%E5%88%9D%E5%A7%8BMongoDB/" class="archive-article-date">
-  	<time datetime="2020-05-20T18:08:42.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-21</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p> 由于我们在开发的过程中难免会遇到数据库选型的问题，那么数据库的选型那我们必须通过结合我们的业务场景还有他们的设计初衷，及各自在各个方面的优势。现在我们就在业务开发中遇到了选择 mongoDB还时MYsql。之前没有怎么了解过mongoDB，那今天就开始我的mongoDB第一步。</p>
-<h2 id="设计的初衷"><a href="#设计的初衷" class="headerlink" title="设计的初衷"></a>设计的初衷</h2><p>建立一种灵活，高效，易于扩展，功能完备的数据库。</p>
-<h2 id="1-丰富的数据模型"><a href="#1-丰富的数据模型" class="headerlink" title="1. 丰富的数据模型"></a>1. 丰富的数据模型</h2><ul>
-<li>mongo是面向文档的数据库，为了获得更好的扩展性采用的不是关系型数据库，使用一条记录就可以表示非常复杂的层次关系</li>
-<li>没有固定的模式，文档的键值可以在应用层进行自己处理<h2 id="2-容易扩展"><a href="#2-容易扩展" class="headerlink" title="2. 容易扩展"></a>2. 容易扩展</h2></li>
-<li>由于大数据时代的来临，开发者遇到的问题就是如何扩展数据库。一般的关系性数据库做拓展最简单的方式也就是分库分表等，但是mongo采用的是文档模式可以自动在多台服务器间进行分割数据。还可以自动平衡负载和自动重排文档等<h2 id="3-丰富的功能"><a href="#3-丰富的功能" class="headerlink" title="3. 丰富的功能"></a>3. 丰富的功能</h2></li>
-<li>索引<br>  1.拥有铺筑索引，能进行多种快速查询，也提供唯一的，复合的和地理空间索引能力</li>
-<li>存储JavaScript</li>
-<li>聚合 MapReduce和其他聚合工具</li>
-<li>固定集合 集合的大小是有上限的</li>
-<li>文件存储 存储大型文件和文件元数据<br>但是也有关系数据库中的功能不具备，那就是join查询，和多行事物。mongo的架构是为了提高性能和扩展性，但是这两个功能很难在一个分布式系统上实现。<h2 id="4-不牺牲速度"><a href="#4-不牺牲速度" class="headerlink" title="4. 不牺牲速度"></a>4. 不牺牲速度</h2>mongo的主要目标是卓越的性能，使用的传输协议是自己的传输协议作为服务器间交互的主要方式，他对文档进行动态填充，将内存管理工作交给操作系统去处理动态查询优化器会记住执行查询最高效的方式，也将类似于关系型数据库中的一部分业务交给了客户端去处理。<h2 id="5-简便的管理"><a href="#5-简便的管理" class="headerlink" title="5.简便的管理"></a>5.简便的管理</h2>MonogDB尽量让服务器自治来简化数据库的管理。除了启动就再也没有什，么需要管理的地方了。如果有节点挂掉，mongo会自动去切换到从节点的机器上。 mongo的管理理念是尽可能的让服务器进行自动配置，让用户在需要时候调整设置。<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2>所有新事物的产生，都会有产生的原因，mongo也不列外，硬件水平提升，大数据时代的到来，关系型数据库出现暴露出了自己的性能瓶颈，如：全文检索导致数据响应时间慢，数据模型的固定导致业务修改成本高等等。mongo通过牺牲关系型数据库中部分功能（事物，join关联）来提高数据库的灵活性和高效性。及支持自动分区，提高数据库的扩展性</li>
-</ul>
-<h2 id="想一下和mysql关系型数据库的区别？-mysql的优势是什么呢？"><a href="#想一下和mysql关系型数据库的区别？-mysql的优势是什么呢？" class="headerlink" title="想一下和mysql关系型数据库的区别？ mysql的优势是什么呢？"></a>想一下和mysql关系型数据库的区别？ mysql的优势是什么呢？</h2>
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/05/21/520%E5%88%9D%E5%A7%8BMongoDB/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-复盘" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/05/19/%E5%A4%8D%E7%9B%98/">复盘</a>
-    </h1>
-  
-
-        
-        <a href="/2020/05/19/%E5%A4%8D%E7%9B%98/" class="archive-article-date">
-  	<time datetime="2020-05-18T16:03:01.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-19</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <ol>
-<li><p>你所毕业的学校真的对于你来很重要。</p>
-<ul>
-<li>第一件事： 那天中午，有一个今年就要毕业的实习生，很兴奋的跑过来跟我说：“X哥，我现在接受X业务模块了，听G哥说，你熟悉这块逻辑，以后还得多问问你。”。不得不说我挺替这位实习生高兴的。我说好啊，有问题你过来问我就行。然后过了有半个星期。我和那个实习生的师傅吃饭，我说怎么不见实习生了。他说：“被HR劝退了！”。我当时挺疑问的：“这娃挺上进的，怎么就不要了呢？”。他师傅说：“学校不行，今年就业形式不行，公司现在招985，211的哪些！”。</li>
-</ul>
-</li>
-<li><p>每一件事情对于你来说都很重要</p>
-</li>
-</ol>
-<ul>
-<li>第二件事： 公司组织业务考试，考试系统有bug，大家都是搞研发的，一不说二不休的直接把答案都搞出来了。最后大部分都考了高分。因为有满分且做的很快，于是高层领导怀疑有人作弊。组织让高分进行了重考，极少数人重视了第二次考试考过了，大部分人没有重视随意一答就出了考场。于是公司在没考过的人里面追查了下来。大部分人降职降薪。 到最后谁也没想到会有这么严重的结果。</li>
-</ul>
-<p>这两件事情虽然我都幸免于难。但对我的感触颇为深厚。就当是今天通过这两件事情复盘一下自己。 </p>
-<p>从去年大学毕业都很顺利，一直到现在都还好，没有遇到什么大的困难和坎坷。也学到了很多东西，也养成了一些好的习惯。 </p>
-<p>但是针对于上面的两件事情，我都不够好，第一件我不是什么名校，但这只能怪以前的自己不够优秀，不够好。不能责怪现在的自己，一切问题都会有办法来解决。 那就是现在的自己弥补以前自己的缺失。不晚，一点也不晚。只要能静下心来，能够用心，这都是可以弥补过来的。就比如定个目标，让自己去一个可以“镀金”的公司。不断的去学习，提高自己的认知，提高自己的知识储备。到目前来看我有做到第一步不断提高自己的知识储备。但是还是不能够静下心来（效率不够高），目标还不是很明确，还有就是不够自信。再次在这里劝诫自己多出去“实战，实战”。</p>
-<p>第二件事情对于我来说，完全是幸运，因为我当时也有“抄袭”，大概是没有抄好，到最后没有考到很高分。甚至我在考完得到分数感觉有一些懊悔（这他妈才考了这么点）。我完全没有重视这场考试，没有预习也没有复习。甚至“抄袭也没有抄好”。这就是问题。仔细想想以前的很多的小的问题我都没有做好，甚至到今天突然想到leader安排的一个指标监控还没有做好（有些时间了）。这就是问题吧。不得不承认我是一个邋遢的人。甚至可以说在平日里计划都不很明确的人。不是一个细心的人。大概是这样。没有计划，就会遗漏。再想想我真的做的很差在这方面。 这就是我的短板之一，写到这里还算是明确了。是的有短板就需要刻意练习。再扯回“对每件事都要重视”这件事情上，就说事我重视了这件事情，还有就是踏踏实实的自己干，那我完全不用浪费我的运气了。我会顺顺当当的过关。这又映射出另一件事情：“那就是踏踏实实做自己”。大概就是这样。写到这里也算明确了和正确理解了这两件事情。</p>
-<p>总结一下：</p>
-<ol>
-<li>继续加油持续充电，明确目标不断前进。</li>
-<li>计划明确细心静心，脚踏实地弥补短板。</li>
-</ol>
-<ul>
-<li>共勉！！！<br>我感觉我适合做一个Rapper</li>
-</ul>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/05/19/%E5%A4%8D%E7%9B%98/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-spring-aop的实现原理" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/05/18/spring-aop%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/">spring aop的实现原理</a>
-    </h1>
-  
-
-        
-        <a href="/2020/05/18/spring-aop%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/" class="archive-article-date">
-  	<time datetime="2020-05-18T01:16:43.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-18</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <ol>
-<li>Spring 框架启动的裹层呢</li>
-</ol>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/05/18/spring-aop%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
   
   
-    <nav id="page-nav">
-      <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/2/">Next &amp;raquo;</a>
-    </nav>
+  
+
+  
+
+  
+
   
 
 
@@ -1157,8 +329,8 @@ private static class FooGuard implements Guard&lt;States, Events&gt; {
     <script>
 	var yiliaConfig = {
 		mathjax: false,
-		isHome: true,
-		isPost: false,
+		isHome: false,
+		isPost: true,
 		isArchive: false,
 		isTag: false,
 		isCategory: false,
