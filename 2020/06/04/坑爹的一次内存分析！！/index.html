@@ -6,17 +6,27 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://www.yuanxindong.com">
-  <title>Archives: 2020/6 | Welcome to Jeff&#39;s blog</title>
+  <title>坑爹的一次内存分析！！ | Welcome to Jeff&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="java">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Welcome to Jeff&#39;s blog">
-<meta property="og:url" content="http://www.yuanxindong.com/archives/2020/06/index.html">
+  <meta name="description" content="背景突然dingding 嗡嗡作响。内心一颤，打开一看。我早有一台服务内存95。机会来了，露一手。grafana 先观察了下。是慢慢的张上来的。说明有内存泄露。jps ，jstat 。命令baba一敲。一看机器起了20多天竟然有11万次FGC。说出来你都不信吧。忘记截图了。具体每次GC时间给忘了（有点不专业了）。于是使用jmap dump包（有风险，当时和同事还评估了一下，可以搞）,完成后 ，然后">
+<meta property="og:type" content="article">
+<meta property="og:title" content="坑爹的一次内存分析！！">
+<meta property="og:url" content="http://www.yuanxindong.com/2020/06/04/%E5%9D%91%E7%88%B9%E7%9A%84%E4%B8%80%E6%AC%A1%E5%86%85%E5%AD%98%E5%88%86%E6%9E%90%EF%BC%81%EF%BC%81/index.html">
 <meta property="og:site_name" content="Welcome to Jeff&#39;s blog">
-<meta property="og:description" content="java">
+<meta property="og:description" content="背景突然dingding 嗡嗡作响。内心一颤，打开一看。我早有一台服务内存95。机会来了，露一手。grafana 先观察了下。是慢慢的张上来的。说明有内存泄露。jps ，jstat 。命令baba一敲。一看机器起了20多天竟然有11万次FGC。说出来你都不信吧。忘记截图了。具体每次GC时间给忘了（有点不专业了）。于是使用jmap dump包（有风险，当时和同事还评估了一下，可以搞）,完成后 ，然后">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200604012739605.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200604012758536.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200604012847709.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200604013100547.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/2020060401313491.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200604013156197.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200604013319264.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta property="article:published_time" content="2020-06-03T17:36:00.000Z">
+<meta property="article:modified_time" content="2020-06-03T17:36:18.393Z">
 <meta property="article:author" content="yuanxindong">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20200604012739605.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
   
     <link rel="alternative" href="/atom.xml" title="Welcome to Jeff&#39;s blog" type="application/atom+xml">
   
@@ -148,76 +158,169 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
+            <article id="post-坑爹的一次内存分析！！" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
   
+    <h1 class="article-title" itemprop="name">
+      坑爹的一次内存分析！！
+    </h1>
   
-    
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2020" class="archive-year">2020</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2020/06/04/%E5%9D%91%E7%88%B9%E7%9A%84%E4%B8%80%E6%AC%A1%E5%86%85%E5%AD%98%E5%88%86%E6%9E%90%EF%BC%81%EF%BC%81/" class="archive-article-date">
+
+        
+        <a href="/2020/06/04/%E5%9D%91%E7%88%B9%E7%9A%84%E4%B8%80%E6%AC%A1%E5%86%85%E5%AD%98%E5%88%86%E6%9E%90%EF%BC%81%EF%BC%81/" class="archive-article-date">
   	<time datetime="2020-06-03T17:36:00.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-06-04</time>
 </a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2020/06/04/%E5%9D%91%E7%88%B9%E7%9A%84%E4%B8%80%E6%AC%A1%E5%86%85%E5%AD%98%E5%88%86%E6%9E%90%EF%BC%81%EF%BC%81/">坑爹的一次内存分析！！</a>
-    </h1>
-  
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>突然dingding 嗡嗡作响。内心一颤，打开一看。我早有一台服务内存95。<br>机会来了，露一手。<br>grafana 先观察了下。是慢慢的张上来的。说明有内存泄露。<br>jps ，jstat 。命令baba一敲。一看机器起了20多天竟然有11万次FGC。说出来你都不信吧。忘记截图了。具体每次GC时间给忘了（有点不专业了）。于是使用jmap dump包（有风险，当时和同事还评估了一下，可以搞）,完成后 ，然后重启这台服务。</p>
+<h3 id="开始搞起"><a href="#开始搞起" class="headerlink" title="开始搞起"></a>开始搞起</h3><ol>
+<li><p>由于是生产机器，root权限下没有同步环境变量。所以在刚开始使用jps jmap这些命令都没有生效。所以使用了source /etc/profile 进行环境变量的同步</p>
+</li>
+<li><p>使用命令jps找到进程ID</p>
+</li>
+<li><p>使用 jmap -dump:format=b,file=dumpHeap.bin 28398 dump 文件到本目录下<br><img src="https://img-blog.csdnimg.cn/20200604012739605.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+</li>
+<li><p>由于我们使用的jumpserver 将文件最后移动到tmp文件下进行下载。但是由于权限不够，导致下载失败</p>
+</li>
+<li><p>于是使用chromd -777 设置文件的权限 </p>
+</li>
+<li><p>花了9二虎之力，算是下载下来。</p>
+</li>
+<li><p>在本地使用jvisualvm命令进行dump heap 进行分析。<br><img src="https://img-blog.csdnimg.cn/20200604012758536.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+</li>
+<li><p>由于我dump下来的文件是.bin后缀,但是visualvm能打开的后缀是.hprof 所以需要修改。这个很简单如果你是使用的mac 的话直接显示简介直接更改后缀<img src="https://img-blog.csdnimg.cn/20200604012847709.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+</li>
+<li><p>直接使用visuavm 打开你的包就可以了。这个会花点时间<br><img src="https://img-blog.csdnimg.cn/20200604013100547.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+</li>
+<li><p>加载完毕后便可以看到你的heap的主信息了<br><img src="https://img-blog.csdnimg.cn/2020060401313491.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+</li>
+<li><p>这个时候就进行分析一下，是那一些对象占用了内存<br><img src="https://img-blog.csdnimg.cn/20200604013156197.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+</li>
+<li><p>好的那么我们再去看看这个对象都被那些对象引用了。前三个都看一下。<br><img src="https://img-blog.csdnimg.cn/20200604013319264.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+</li>
+<li><p>我尼玛！！！！！！！ 内存不够，我电脑8G 这个对象大概是占用了3G。我把电脑的所有的都关掉。然后最后还是不行。 好吧我认输。明天换公司电脑继续搞一下。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3></li>
+<li><p>遇到问题一定要截图留下证据</p>
+</li>
+<li><p>线上环境谨慎操作每一步 </p>
+</li>
+<li><p>8G内存真不够啊！！！！！</p>
+</li>
+</ol>
 
-        <div class="article-info info-on-right">
-          
-          
+      
 
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+
+      
+        
+<div class="share-btn share-icons tooltip-left">
+  <div class="tooltip tooltip-east">
+    <span class="tooltip-item">
+      <a href="javascript:;" class="share-sns share-outer">
+        <i class="icon icon-share"></i>
+      </a>
+    </span>
+    <span class="tooltip-content">
+      <div class="share-wrap">
+        <div class="share-icons">
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="icon icon-weibo"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="icon icon-weixin"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="icon icon-qq"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="icon icon-douban"></i>
+          </a>
+          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a>
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="icon icon-facebook"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="icon icon-twitter"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="icon icon-google"></i>
+          </a>
         </div>
-        <div class="clearfix"></div>
-    </header>
+      </div>
+    </span>
+  </div>
+</div>
+
+<div class="page-modal wx-share js-wx-box">
+    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="//pan.baidu.com/share/qrcode?url=http://www.yuanxindong.com/2020/06/04/%E5%9D%91%E7%88%B9%E7%9A%84%E4%B8%80%E6%AC%A1%E5%86%85%E5%AD%98%E5%88%86%E6%9E%90%EF%BC%81%EF%BC%81/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div class="mask js-mask"></div>
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
   
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2020/06/02/BIO%E5%88%B0NIO%E7%9A%84%E6%BC%94%E5%8F%98%E8%BF%87%E7%A8%8B/" class="archive-article-date">
-  	<time datetime="2020-06-01T17:39:54.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-06-02</time>
-</a>
+<nav id="article-nav">
+  
+  
+    <a href="/2020/06/02/BIO%E5%88%B0NIO%E7%9A%84%E6%BC%94%E5%8F%98%E8%BF%87%E7%A8%8B/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">BIO到NIO的演变过程</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
         </div>
-    	 
+        
+        
+    </div>
+</aside>
+
+
+
   
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2020/06/02/BIO%E5%88%B0NIO%E7%9A%84%E6%BC%94%E5%8F%98%E8%BF%87%E7%A8%8B/">BIO到NIO的演变过程</a>
-    </h1>
+  
   
 
-        <div class="article-info info-on-right">
-          
-          
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-  
-    </div></section>
   
 
-    
+  
+
+  
 
 
           </div>
@@ -241,8 +344,8 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
-		isArchive: true,
+		isPost: true,
+		isArchive: false,
 		isTag: false,
 		isCategory: false,
 		open_in_new: false,

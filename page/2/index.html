@@ -150,6 +150,71 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-spring-aop的实现原理" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/05/18/spring-aop%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/">spring aop的实现原理</a>
+    </h1>
+  
+
+        
+        <a href="/2020/05/18/spring-aop%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/" class="archive-article-date">
+  	<time datetime="2020-05-18T01:16:43.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-18</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <ol>
+<li>Spring 框架启动的裹层呢</li>
+</ol>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/05/18/spring-aop%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-以正确姿势理解区块链技术？" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -1115,100 +1180,6 @@
       
         <p class="article-more-link">
           <a class="article-more-a" href="/2020/05/17/%E5%BE%AE%E8%A7%82%E7%BB%8F%E6%B5%8E%E5%AD%A6%E5%92%8C%E5%AE%8F%E8%A7%82%E7%BB%8F%E6%B5%8E%E5%AD%A6/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-阿里代码规约为什么不让使用Executors包装好线程池呢" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/05/17/%E9%98%BF%E9%87%8C%E4%BB%A3%E7%A0%81%E8%A7%84%E7%BA%A6%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E8%AE%A9%E4%BD%BF%E7%94%A8Executors%E5%8C%85%E8%A3%85%E5%A5%BD%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%91%A2/">阿里代码规约为什么不让使用Executors包装好线程池呢</a>
-    </h1>
-  
-
-        
-        <a href="/2020/05/17/%E9%98%BF%E9%87%8C%E4%BB%A3%E7%A0%81%E8%A7%84%E7%BA%A6%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E8%AE%A9%E4%BD%BF%E7%94%A8Executors%E5%8C%85%E8%A3%85%E5%A5%BD%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%91%A2/" class="archive-article-date">
-  	<time datetime="2020-05-16T17:09:33.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-17</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h4 id="在Executors下主要有5个静态方法："><a href="#在Executors下主要有5个静态方法：" class="headerlink" title="在Executors下主要有5个静态方法："></a>在Executors下主要有5个静态方法：</h4><p><strong>1. Executors.newWorkStealingPool</strong></p>
-<ul>
-<li>JDK8引入，创建持有足够线程的线程池支持给定的并行度，并通过使用多个队列减少竞争，此构造方法把CPU数量设置为默认的并行度</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">public ForkJoinPool(int parallelism,</span><br><span class="line">                    ForkJoinWorkerThreadFactory factory,</span><br><span class="line">                    UncaughtExceptionHandler handler,</span><br><span class="line">                    boolean asyncMode) &#123;</span><br><span class="line">    this(checkParallelism(parallelism),</span><br><span class="line">         checkFactory(factory),</span><br><span class="line">         handler,</span><br><span class="line">         asyncMode ? FIFO_QUEUE : LIFO_QUEUE,</span><br><span class="line">         &quot;ForkJoinPool-&quot; + nextPoolId() + &quot;-worker-&quot;);</span><br><span class="line">    checkPermission();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>2. Executors.newCacheThreadPool</strong></p>
-<ul>
-<li>这个线程池是一个没有核心线程数的，且最大线程数是Integer.MAX_VALUE，且使用的队列是SynchronousQueue，这个队列有点反人类，他不存储元素的阻塞队列，在创建元素的时候每一个put操作必须等待take操作，否则就不能添加元素 。这样我们就知道了因为没有核心线程数，所以刚来的任务我们都会进入到队列中，但是这个队列没有take也不会put，此时那就是说队列满了，然后就创建最大线程数。且设置的最大线程数在空闲状态下的存活时间为60秒。当有线程闲下来的时候，如果有新的任务来的时候就是用空闲线程，但是有可能出现瞬间来了大量的请求，此时就会无限创建线程直到Integer.MAX_VALUE个线程，很多机器应该在没有达到之前就会OOM了。创建一个线程就会分配堆，本地方法栈，java虚拟机栈等。所以就很容易就OOM了<br><img src="https://img-blog.csdnimg.cn/20200505224941972.png" alt="在这里插入图片描述"></li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public static ExecutorService newCachedThreadPool() &#123;</span><br><span class="line">        return new ThreadPoolExecutor(0, Integer.MAX_VALUE,</span><br><span class="line">                                      60L, TimeUnit.SECONDS,</span><br><span class="line">                                      new SynchronousQueue&lt;Runnable&gt;());</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>3. Executors.newScheduledThreadPool</strong></p>
-<ul>
-<li>线程数最大到Integer.MAX_VALUE,与上面所说的一样都有可能会OOM，他是ScheduledExecutorService接口家族的实现类，支持定时及周期性任务执行。与newCacheThreadPool的区别就是不回收工作线程。从下面代码可以看出到最后也是使用了ThreadPoolExcutor这个类然定义了对应对参数。如设置了最大线程数的存活时间是0秒。<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">public static ScheduledExecutorService newScheduledThreadPool(int corePoolSize) &#123;</span><br><span class="line">    return new ScheduledThreadPoolExecutor(corePoolSize);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public ScheduledThreadPoolExecutor(int corePoolSize) &#123;</span><br><span class="line">    super(corePoolSize, Integer.MAX_VALUE, 0, NANOSECONDS,</span><br><span class="line">          new DelayedWorkQueue());</span><br><span class="line">&#125;</span><br><span class="line">    public ThreadPoolExecutor(int corePoolSize,</span><br><span class="line">                          int maximumPoolSize,</span><br><span class="line">                          long keepAliveTime,</span><br><span class="line">                          TimeUnit unit,</span><br><span class="line">                          BlockingQueue&lt;Runnable&gt; workQueue) &#123;</span><br><span class="line">    this(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue,</span><br><span class="line">         Executors.defaultThreadFactory(), defaultHandler);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-</li>
-</ul>
-<p><strong>4. Executors.newSingleThreadExecutor</strong></p>
-<ul>
-<li>创建一个单线程的的线程池，相当于单线程串行执行任务，保证按任务的提交顺序依次执行。这个线程池虽然不会因为线程创建过多而oom但是会因为阻塞到队列而最后产生oom，因为他使用的是LinkedBlockingQueue 看源码我们可知他的最大长度也是Integer.MAX_VALUE，所以大量任務的提交也会导致OOM。<br><img src="https://img-blog.csdnimg.cn/20200505225000397.png" alt="在这里插入图片描述"></li>
-</ul>
-<p>源码： </p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public static ExecutorService newSingleThreadExecutor() &#123;</span><br><span class="line">    return new FinalizableDelegatedExecutorService</span><br><span class="line">        (new ThreadPoolExecutor(1, 1,</span><br><span class="line">                                0L, TimeUnit.MILLISECONDS,</span><br><span class="line">                                new LinkedBlockingQueue&lt;Runnable&gt;()));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>5. Executors.newFixedThreadPool</strong></p>
-<ul>
-<li>输入的参数即是固定的线程数，即是核心的线程数也是最大的线程数，不存在空闲线程</li>
-<li>看下面的源码我们可知最大线程数和核心线程数是相等的，也就可说只有核心线程数，我们都知道如果核心线程数没有特定的配置的话核心线程数一旦创建就不会被回收的。但是我们可以看到他使用的也是LinkedBlockingQueue且默认的大小为Integer.MAX_VALUE，所以也会OOM。<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public static ExecutorService newFixedThreadPool(int nThreads) &#123;</span><br><span class="line">    return new ThreadPoolExecutor(nThreads, nThreads,</span><br><span class="line">                                  0L, TimeUnit.MILLISECONDS,</span><br><span class="line">                                  new LinkedBlockingQueue&lt;Runnable&gt;());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="其实看了上面的Excutors的五个方法后，在阿里规约里面时不可以使用除第一个外的四个包内线程的，因为他们都会引起OOM。"><a href="#其实看了上面的Excutors的五个方法后，在阿里规约里面时不可以使用除第一个外的四个包内线程的，因为他们都会引起OOM。" class="headerlink" title="其实看了上面的Excutors的五个方法后，在阿里规约里面时不可以使用除第一个外的四个包内线程的，因为他们都会引起OOM。"></a>其实看了上面的Excutors的五个方法后，在阿里规约里面时不可以使用除第一个外的四个包内线程的，因为他们都会引起OOM。</h3><h3 id="从源码我们可以看出都是有ThreadPoolExcutor这个类传入不同的参数而实现的所以说只要我们搞懂其中传入的7个参数的含义，就可以大概搞懂线程池的冰山一角了"><a href="#从源码我们可以看出都是有ThreadPoolExcutor这个类传入不同的参数而实现的所以说只要我们搞懂其中传入的7个参数的含义，就可以大概搞懂线程池的冰山一角了" class="headerlink" title="==从源码我们可以看出都是有ThreadPoolExcutor这个类传入不同的参数而实现的所以说只要我们搞懂其中传入的7个参数的含义，就可以大概搞懂线程池的冰山一角了=="></a>==从源码我们可以看出都是有ThreadPoolExcutor这个类传入不同的参数而实现的所以说只要我们搞懂其中传入的7个参数的含义，就可以大概搞懂线程池的冰山一角了==</h3><img src="https://img-blog.csdnimg.cn/20200505224911619.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></li>
-</ul>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/05/17/%E9%98%BF%E9%87%8C%E4%BB%A3%E7%A0%81%E8%A7%84%E7%BA%A6%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E8%AE%A9%E4%BD%BF%E7%94%A8Executors%E5%8C%85%E8%A3%85%E5%A5%BD%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%91%A2/">展开全文 >></a>
         </p>
       
 
