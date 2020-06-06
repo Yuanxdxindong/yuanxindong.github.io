@@ -6,27 +6,21 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://www.yuanxindong.com">
-  <title>坑爹的一次内存分析！！ | Welcome to Jeff&#39;s blog</title>
+  <title>redis的持久化存储RDB的原理分析 | Welcome to Jeff&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="背景突然dingding 嗡嗡作响。内心一颤，打开一看。我早有一台服务内存95。机会来了，露一手。grafana 先观察了下。是慢慢的张上来的。说明有内存泄露。jps ，jstat 。命令baba一敲。一看机器起了20多天竟然有11万次FGC。说出来你都不信吧。忘记截图了。具体每次GC时间给忘了（有点不专业了）。于是使用jmap dump包（有风险，当时和同事还评估了一下，可以搞）,完成后 ，然后">
+  <meta name="description" content="背景想到redis，你的第一反应是什么呢？redis很快，我们一般一用它做缓存，再想想他为什么快呢？也许你的第一反应和我的第一反应是一样的，因为他是基于内存存储的，IO多路复用等。那么既然是基于内存存储的，那要是redis当宕机了那岂不是内存的数据都无法恢复了（在一些特殊情况下数据比较重要的情况）。那redis是如何解决这一问题？那就是redis的持久化机制。 redis持久化机制redis 有两">
 <meta property="og:type" content="article">
-<meta property="og:title" content="坑爹的一次内存分析！！">
-<meta property="og:url" content="http://www.yuanxindong.com/2020/06/04/%E5%9D%91%E7%88%B9%E7%9A%84%E4%B8%80%E6%AC%A1%E5%86%85%E5%AD%98%E5%88%86%E6%9E%90%EF%BC%81%EF%BC%81/index.html">
+<meta property="og:title" content="redis的持久化存储RDB的原理分析">
+<meta property="og:url" content="http://www.yuanxindong.com/2020/06/07/redis%E7%9A%84%E6%8C%81%E4%B9%85%E5%8C%96%E5%AD%98%E5%82%A8RDB%E7%9A%84%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/index.html">
 <meta property="og:site_name" content="Welcome to Jeff&#39;s blog">
-<meta property="og:description" content="背景突然dingding 嗡嗡作响。内心一颤，打开一看。我早有一台服务内存95。机会来了，露一手。grafana 先观察了下。是慢慢的张上来的。说明有内存泄露。jps ，jstat 。命令baba一敲。一看机器起了20多天竟然有11万次FGC。说出来你都不信吧。忘记截图了。具体每次GC时间给忘了（有点不专业了）。于是使用jmap dump包（有风险，当时和同事还评估了一下，可以搞）,完成后 ，然后">
+<meta property="og:description" content="背景想到redis，你的第一反应是什么呢？redis很快，我们一般一用它做缓存，再想想他为什么快呢？也许你的第一反应和我的第一反应是一样的，因为他是基于内存存储的，IO多路复用等。那么既然是基于内存存储的，那要是redis当宕机了那岂不是内存的数据都无法恢复了（在一些特殊情况下数据比较重要的情况）。那redis是如何解决这一问题？那就是redis的持久化机制。 redis持久化机制redis 有两">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://img-blog.csdnimg.cn/20200604012739605.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
-<meta property="og:image" content="https://img-blog.csdnimg.cn/20200604012758536.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
-<meta property="og:image" content="https://img-blog.csdnimg.cn/20200604012847709.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
-<meta property="og:image" content="https://img-blog.csdnimg.cn/20200604013100547.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
-<meta property="og:image" content="https://img-blog.csdnimg.cn/2020060401313491.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
-<meta property="og:image" content="https://img-blog.csdnimg.cn/20200604013156197.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
-<meta property="og:image" content="https://img-blog.csdnimg.cn/20200604013319264.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
-<meta property="article:published_time" content="2020-06-03T17:36:00.000Z">
-<meta property="article:modified_time" content="2020-06-03T17:36:18.393Z">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200607003445316.png">
+<meta property="article:published_time" content="2020-06-06T16:36:52.000Z">
+<meta property="article:modified_time" content="2020-06-06T16:37:35.055Z">
 <meta property="article:author" content="yuanxindong">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20200604012739605.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20200607003445316.png">
   
     <link rel="alternative" href="/atom.xml" title="Welcome to Jeff&#39;s blog" type="application/atom+xml">
   
@@ -158,60 +152,61 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-坑爹的一次内存分析！！" class="article article-type-post " itemscope itemprop="blogPost">
+            <article id="post-redis的持久化存储RDB的原理分析" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 class="article-title" itemprop="name">
-      坑爹的一次内存分析！！
+      redis的持久化存储RDB的原理分析
     </h1>
   
 
         
-        <a href="/2020/06/04/%E5%9D%91%E7%88%B9%E7%9A%84%E4%B8%80%E6%AC%A1%E5%86%85%E5%AD%98%E5%88%86%E6%9E%90%EF%BC%81%EF%BC%81/" class="archive-article-date">
-  	<time datetime="2020-06-03T17:36:00.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-06-04</time>
+        <a href="/2020/06/07/redis%E7%9A%84%E6%8C%81%E4%B9%85%E5%8C%96%E5%AD%98%E5%82%A8RDB%E7%9A%84%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/" class="archive-article-date">
+  	<time datetime="2020-06-06T16:36:52.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-06-07</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>突然dingding 嗡嗡作响。内心一颤，打开一看。我早有一台服务内存95。<br>机会来了，露一手。<br>grafana 先观察了下。是慢慢的张上来的。说明有内存泄露。<br>jps ，jstat 。命令baba一敲。一看机器起了20多天竟然有11万次FGC。说出来你都不信吧。忘记截图了。具体每次GC时间给忘了（有点不专业了）。于是使用jmap dump包（有风险，当时和同事还评估了一下，可以搞）,完成后 ，然后重启这台服务。</p>
-<h3 id="开始搞起"><a href="#开始搞起" class="headerlink" title="开始搞起"></a>开始搞起</h3><ol>
-<li><p>由于是生产机器，root权限下没有同步环境变量。所以在刚开始使用jps jmap这些命令都没有生效。所以使用了source /etc/profile 进行环境变量的同步</p>
+        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>想到redis，你的第一反应是什么呢？redis很快，我们一般一用它做缓存，再想想他为什么快呢？也许你的第一反应和我的第一反应是一样的，因为他是基于内存存储的，IO多路复用等。那么既然是基于内存存储的，那要是redis当宕机了那岂不是内存的数据都无法恢复了（在一些特殊情况下数据比较重要的情况）。那redis是如何解决这一问题？那就是redis的持久化机制。</p>
+<h3 id="redis持久化机制"><a href="#redis持久化机制" class="headerlink" title="redis持久化机制"></a>redis持久化机制</h3><p>redis 有两种持久化方式，RDB和AOF，今天我们主要先聊聊RDB持久化数据</p>
+<h4 id="1-RDB"><a href="#1-RDB" class="headerlink" title="1. RDB"></a>1. RDB</h4><ul>
+<li><p>权威指南（<a href="http://www.redis.cn/topics/persistence.html" target="_blank" rel="noopener">redis官方文档</a>） “RDB持久化方式能够在指定的时间间隔能对你的数据进行快照存储.”</p>
 </li>
-<li><p>使用命令jps找到进程ID</p>
+<li><p>我们看看RDB的使用：RDB 功能最核心的是 rdbSave 和 rdbLoad 两个函数， 前者用于生成 RDB 文件到磁盘， 而后者则用于将 RDB 文件中的数据重新载入到内存中：<br><img src="https://img-blog.csdnimg.cn/20200607003445316.png" alt="在这里插入图片描述"></p>
 </li>
-<li><p>使用 jmap -dump:format=b,file=dumpHeap.bin 28398 dump 文件到本目录下<br><img src="https://img-blog.csdnimg.cn/20200604012739605.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<li><p>根就上面的描述，首先是他是主动的，在一定的时间区间就会主动触发程序同步，可想而知，在出发同步的时候会影响redis的业务操作吗? 会出现类似垃圾回收机制中的Stop The word （数据）？ 所以我们就得看看他的底层实现。</p>
+<h5 id="RDB底层实现"><a href="#RDB底层实现" class="headerlink" title="RDB底层实现"></a>RDB底层实现</h5><p>从RDB的两个命令说起：SAVE 和 BGSAVE </p>
 </li>
-<li><p>由于我们使用的jumpserver 将文件最后移动到tmp文件下进行下载。但是由于权限不够，导致下载失败</p>
+<li><p>SAVE 命令直接调用rdbsave函数，会阻塞Redis主线程，直到同步保存数据完成，在这个过程中客户端的任务一个也不能执行。我们在这里同时也得到了另一个信息，那就是redis是单线程的。所以这个线程杯哦</p>
 </li>
-<li><p>于是使用chromd -777 设置文件的权限 </p>
+<li><p>BGSAVE 会fork出一个==子进程==（这里注意了是子进程不是线程），子进程负责调用rdbSave，并在保存完毕完成后向主线程发送信号通知主进程保存完毕。这个时候主进程程也是会处理客户端的数据的。所以我们在此也会留下疑问那就是为什么要通知主进程呢？ </p>
 </li>
-<li><p>花了9二虎之力，算是下载下来。</p>
+</ul>
+<p>在同步到磁盘和持续写入这个过程是如何处理数据不一致的情况呢？这几句是他redis为什么用子进程而不用子线程的原因之一，一个进程他可以包含多个线程，这多个线程是使用的这个进程分配下来的内存地址进行工作的。所以说多个进程之间的内存地址是相互独立的了，所以这也就是说不会出现在线程内加锁的情况，加锁必然会造成延时（除偏向锁等特殊锁类型）降低性能。</p>
+<p>==既然是两个进程那如何同步另一个进程中的数据到另一个进程呢==？同步的这个过程内存中的数据是不断的在变化的，且两个进程也操作的同一个数据啊，线程安全的概念：<em>线程安全是程式设计中的术语，指某个函数、函数库在多线程环境中被调用时，能够正确地处理多个线程之间的共享变量，使程序功能正确完成。（来自维基百科）</em> 这岂不是进程安全问题？（自造）  </p>
+<p>我们先看redis的具体是怎么做的，下面是伪代码，<br>也就是调用了fork（）方法。<em>在计算机编程领域，尤其是 Unix 和类 Unix 系统中，fork 都是一个进程用于创建自己拷贝的操作，它往往都是被操作系统内核实现的系统调用，也是操作系统在 *nix 系统中创建新进程的主要方法。当程序调用了 fork 方法之后，我们就可以通过 fork 的返回值确定父子进程，以此来执行不同的操作：<br>fork 函数返回 0 时，意味着当前进程是子进程；<br>fork 函数返回非 0 时，意味着当前进程是父进程，返回值是子进程的 pid；在 fork 的 手册 中，我们会发现调用 fork 后的父子进程会运行在不同的内存空间中，当 fork 发生时两者的内存空间有着完全相同的内容，对内存的写入和修改、文件的映射都是独立的，两个进程不会相互影响。</em>，可想而知，由于RDB存储的是某一时间点之前的快照，所以父进程写入新的数据并不会影响子进程。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">    def BGSAVE():</span><br><span class="line">pid &#x3D; fork()</span><br><span class="line"></span><br><span class="line">    if pid &#x3D;&#x3D; 0:</span><br><span class="line"></span><br><span class="line">        # 子进程保存 RDB</span><br><span class="line">        rdbSave()</span><br><span class="line"></span><br><span class="line">    elif pid &gt; 0:</span><br><span class="line"></span><br><span class="line">        # 父进程继续处理请求，并等待子进程的完成信号</span><br><span class="line">        handle_request()</span><br><span class="line"></span><br><span class="line">    else:</span><br><span class="line"></span><br><span class="line">        # pid &#x3D;&#x3D; -1</span><br><span class="line">        # 处理 fork 错误</span><br><span class="line">        handle_fork_error()</span><br></pre></td></tr></table></figure>
+
+<p>通过上面的分析和理解，但是还会有一个问题，也就是内存中数据量很大的时候，这个子进程在拷贝父进程的内存数据的时候会耗费大量的CPU时间片导致客户端的线程一直处于就绪状态。那这个问题应该如何解决呢？</p>
+<p>问题总是会被解决的，写时拷贝（COPY—ON-WRITE）意思就是在刚开始的时候调用fork（）方法，并不会将主进程的物理空间复制一份出来给子进程，子进程在此时会和主进程共享同一块物理内存空间，但是拥有不同的虚拟空间。所以在这个时候并不会出现大量数据的复制操作而是给子进程搞一个引用就ok了。所以我们上面所担心的问题也就解决了。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
+<li>我们通过上面的分析，RDB是redis定时持久化的一个业务逻辑，可以通过命令SAVA 和 BGSAVE 进行同步持久化，使用BGSAVA不会影响到客户端的使用。而使用SAVA会影响客户端的使用。BGSAVE的实现是通过调用fork（）和 rdbsave实现的，其中fork（）的意思就是创建一个子进程，且采用的是写时拷贝。</li>
+<li>为什么通过子进程来解决这个问题呢？<ol>
+<li>通过 fork 创建的子进程能够获得和父进程完全相同的内存空间，父进程对内存的修改对于子进程是不可见的，两者不会相互影响；</li>
+<li>通过 fork 创建子进程时不会立刻触发大量内存的拷贝，内存在被修改时会以页为单位进行拷贝，这也就避免了大量拷贝内存而带来的性能问题；</li>
+</ol>
 </li>
-<li><p>在本地使用jvisualvm命令进行dump heap 进行分析。<br><img src="https://img-blog.csdnimg.cn/20200604012758536.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-</li>
-<li><p>由于我dump下来的文件是.bin后缀,但是visualvm能打开的后缀是.hprof 所以需要修改。这个很简单如果你是使用的mac 的话直接显示简介直接更改后缀<img src="https://img-blog.csdnimg.cn/20200604012847709.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-</li>
-<li><p>直接使用visuavm 打开你的包就可以了。这个会花点时间<br><img src="https://img-blog.csdnimg.cn/20200604013100547.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-</li>
-<li><p>加载完毕后便可以看到你的heap的主信息了<br><img src="https://img-blog.csdnimg.cn/2020060401313491.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-</li>
-<li><p>这个时候就进行分析一下，是那一些对象占用了内存<br><img src="https://img-blog.csdnimg.cn/20200604013156197.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-</li>
-<li><p>好的那么我们再去看看这个对象都被那些对象引用了。前三个都看一下。<br><img src="https://img-blog.csdnimg.cn/20200604013319264.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-</li>
-<li><p>我尼玛！！！！！！！ 内存不够，我电脑8G 这个对象大概是占用了3G。我把电脑的所有的都关掉。然后最后还是不行。 好吧我认输。明天换公司电脑继续搞一下。</p>
-<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3></li>
-<li><p>遇到问题一定要截图留下证据</p>
-</li>
-<li><p>线上环境谨慎操作每一步 </p>
-</li>
-<li><p>8G内存真不够啊！！！！！</p>
-</li>
+</ul>
+<h3 id="参考文章："><a href="#参考文章：" class="headerlink" title="参考文章："></a>参考文章：</h3><ol>
+<li><a href="https://www.cnblogs.com/biyeymyhjob/archive/2012/07/20/2601655.html（linux" target="_blank" rel="noopener">https://www.cnblogs.com/biyeymyhjob/archive/2012/07/20/2601655.html（linux</a> 写时拷贝）</li>
+<li><a href="https://redisbook.readthedocs.io/en/latest/internal/rdb.html（RDB）" target="_blank" rel="noopener">https://redisbook.readthedocs.io/en/latest/internal/rdb.html（RDB）</a></li>
+<li><a href="http://www.redis.cn/topics/persistence.html（redis持久化）" target="_blank" rel="noopener">http://www.redis.cn/topics/persistence.html（redis持久化）</a></li>
+<li><a href="https://draveness.me/whys-the-design-redis-bgsave-fork/（RDB）" target="_blank" rel="noopener">https://draveness.me/whys-the-design-redis-bgsave-fork/（RDB）</a></li>
 </ol>
 
       
@@ -271,7 +266,7 @@
     <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
     <p>扫一扫，分享到微信</p>
     <div class="wx-qrcode">
-      <img src="//pan.baidu.com/share/qrcode?url=http://www.yuanxindong.com/2020/06/04/%E5%9D%91%E7%88%B9%E7%9A%84%E4%B8%80%E6%AC%A1%E5%86%85%E5%AD%98%E5%88%86%E6%9E%90%EF%BC%81%EF%BC%81/" alt="微信分享二维码">
+      <img src="//pan.baidu.com/share/qrcode?url=http://www.yuanxindong.com/2020/06/07/redis%E7%9A%84%E6%8C%81%E4%B9%85%E5%8C%96%E5%AD%98%E5%82%A8RDB%E7%9A%84%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/" alt="微信分享二维码">
     </div>
 </div>
 
@@ -285,18 +280,9 @@
   
 <nav id="article-nav">
   
-    <a href="/2020/06/07/redis%E7%9A%84%E6%8C%81%E4%B9%85%E5%8C%96%E5%AD%98%E5%82%A8RDB%E7%9A%84%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/" id="article-nav-newer" class="article-nav-link-wrap">
-      <i class="icon-circle-left"></i>
-      <div class="article-nav-title">
-        
-          redis的持久化存储RDB的原理分析
-        
-      </div>
-    </a>
   
-  
-    <a href="/2020/06/02/BIO%E5%88%B0NIO%E7%9A%84%E6%BC%94%E5%8F%98%E8%BF%87%E7%A8%8B/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">BIO到NIO的演变过程</div>
+    <a href="/2020/06/04/%E5%9D%91%E7%88%B9%E7%9A%84%E4%B8%80%E6%AC%A1%E5%86%85%E5%AD%98%E5%88%86%E6%9E%90%EF%BC%81%EF%BC%81/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">坑爹的一次内存分析！！</div>
       <i class="icon-circle-right"></i>
     </a>
   

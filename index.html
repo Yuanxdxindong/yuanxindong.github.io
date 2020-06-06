@@ -150,6 +150,104 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-redis的持久化存储RDB的原理分析" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/06/07/redis%E7%9A%84%E6%8C%81%E4%B9%85%E5%8C%96%E5%AD%98%E5%82%A8RDB%E7%9A%84%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/">redis的持久化存储RDB的原理分析</a>
+    </h1>
+  
+
+        
+        <a href="/2020/06/07/redis%E7%9A%84%E6%8C%81%E4%B9%85%E5%8C%96%E5%AD%98%E5%82%A8RDB%E7%9A%84%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/" class="archive-article-date">
+  	<time datetime="2020-06-06T16:36:52.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-06-07</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>想到redis，你的第一反应是什么呢？redis很快，我们一般一用它做缓存，再想想他为什么快呢？也许你的第一反应和我的第一反应是一样的，因为他是基于内存存储的，IO多路复用等。那么既然是基于内存存储的，那要是redis当宕机了那岂不是内存的数据都无法恢复了（在一些特殊情况下数据比较重要的情况）。那redis是如何解决这一问题？那就是redis的持久化机制。</p>
+<h3 id="redis持久化机制"><a href="#redis持久化机制" class="headerlink" title="redis持久化机制"></a>redis持久化机制</h3><p>redis 有两种持久化方式，RDB和AOF，今天我们主要先聊聊RDB持久化数据</p>
+<h4 id="1-RDB"><a href="#1-RDB" class="headerlink" title="1. RDB"></a>1. RDB</h4><ul>
+<li><p>权威指南（<a href="http://www.redis.cn/topics/persistence.html" target="_blank" rel="noopener">redis官方文档</a>） “RDB持久化方式能够在指定的时间间隔能对你的数据进行快照存储.”</p>
+</li>
+<li><p>我们看看RDB的使用：RDB 功能最核心的是 rdbSave 和 rdbLoad 两个函数， 前者用于生成 RDB 文件到磁盘， 而后者则用于将 RDB 文件中的数据重新载入到内存中：<br><img src="https://img-blog.csdnimg.cn/20200607003445316.png" alt="在这里插入图片描述"></p>
+</li>
+<li><p>根就上面的描述，首先是他是主动的，在一定的时间区间就会主动触发程序同步，可想而知，在出发同步的时候会影响redis的业务操作吗? 会出现类似垃圾回收机制中的Stop The word （数据）？ 所以我们就得看看他的底层实现。</p>
+<h5 id="RDB底层实现"><a href="#RDB底层实现" class="headerlink" title="RDB底层实现"></a>RDB底层实现</h5><p>从RDB的两个命令说起：SAVE 和 BGSAVE </p>
+</li>
+<li><p>SAVE 命令直接调用rdbsave函数，会阻塞Redis主线程，直到同步保存数据完成，在这个过程中客户端的任务一个也不能执行。我们在这里同时也得到了另一个信息，那就是redis是单线程的。所以这个线程杯哦</p>
+</li>
+<li><p>BGSAVE 会fork出一个==子进程==（这里注意了是子进程不是线程），子进程负责调用rdbSave，并在保存完毕完成后向主线程发送信号通知主进程保存完毕。这个时候主进程程也是会处理客户端的数据的。所以我们在此也会留下疑问那就是为什么要通知主进程呢？ </p>
+</li>
+</ul>
+<p>在同步到磁盘和持续写入这个过程是如何处理数据不一致的情况呢？这几句是他redis为什么用子进程而不用子线程的原因之一，一个进程他可以包含多个线程，这多个线程是使用的这个进程分配下来的内存地址进行工作的。所以说多个进程之间的内存地址是相互独立的了，所以这也就是说不会出现在线程内加锁的情况，加锁必然会造成延时（除偏向锁等特殊锁类型）降低性能。</p>
+<p>==既然是两个进程那如何同步另一个进程中的数据到另一个进程呢==？同步的这个过程内存中的数据是不断的在变化的，且两个进程也操作的同一个数据啊，线程安全的概念：<em>线程安全是程式设计中的术语，指某个函数、函数库在多线程环境中被调用时，能够正确地处理多个线程之间的共享变量，使程序功能正确完成。（来自维基百科）</em> 这岂不是进程安全问题？（自造）  </p>
+<p>我们先看redis的具体是怎么做的，下面是伪代码，<br>也就是调用了fork（）方法。<em>在计算机编程领域，尤其是 Unix 和类 Unix 系统中，fork 都是一个进程用于创建自己拷贝的操作，它往往都是被操作系统内核实现的系统调用，也是操作系统在 *nix 系统中创建新进程的主要方法。当程序调用了 fork 方法之后，我们就可以通过 fork 的返回值确定父子进程，以此来执行不同的操作：<br>fork 函数返回 0 时，意味着当前进程是子进程；<br>fork 函数返回非 0 时，意味着当前进程是父进程，返回值是子进程的 pid；在 fork 的 手册 中，我们会发现调用 fork 后的父子进程会运行在不同的内存空间中，当 fork 发生时两者的内存空间有着完全相同的内容，对内存的写入和修改、文件的映射都是独立的，两个进程不会相互影响。</em>，可想而知，由于RDB存储的是某一时间点之前的快照，所以父进程写入新的数据并不会影响子进程。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">    def BGSAVE():</span><br><span class="line">pid &#x3D; fork()</span><br><span class="line"></span><br><span class="line">    if pid &#x3D;&#x3D; 0:</span><br><span class="line"></span><br><span class="line">        # 子进程保存 RDB</span><br><span class="line">        rdbSave()</span><br><span class="line"></span><br><span class="line">    elif pid &gt; 0:</span><br><span class="line"></span><br><span class="line">        # 父进程继续处理请求，并等待子进程的完成信号</span><br><span class="line">        handle_request()</span><br><span class="line"></span><br><span class="line">    else:</span><br><span class="line"></span><br><span class="line">        # pid &#x3D;&#x3D; -1</span><br><span class="line">        # 处理 fork 错误</span><br><span class="line">        handle_fork_error()</span><br></pre></td></tr></table></figure>
+
+<p>通过上面的分析和理解，但是还会有一个问题，也就是内存中数据量很大的时候，这个子进程在拷贝父进程的内存数据的时候会耗费大量的CPU时间片导致客户端的线程一直处于就绪状态。那这个问题应该如何解决呢？</p>
+<p>问题总是会被解决的，写时拷贝（COPY—ON-WRITE）意思就是在刚开始的时候调用fork（）方法，并不会将主进程的物理空间复制一份出来给子进程，子进程在此时会和主进程共享同一块物理内存空间，但是拥有不同的虚拟空间。所以在这个时候并不会出现大量数据的复制操作而是给子进程搞一个引用就ok了。所以我们上面所担心的问题也就解决了。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
+<li>我们通过上面的分析，RDB是redis定时持久化的一个业务逻辑，可以通过命令SAVA 和 BGSAVE 进行同步持久化，使用BGSAVA不会影响到客户端的使用。而使用SAVA会影响客户端的使用。BGSAVE的实现是通过调用fork（）和 rdbsave实现的，其中fork（）的意思就是创建一个子进程，且采用的是写时拷贝。</li>
+<li>为什么通过子进程来解决这个问题呢？<ol>
+<li>通过 fork 创建的子进程能够获得和父进程完全相同的内存空间，父进程对内存的修改对于子进程是不可见的，两者不会相互影响；</li>
+<li>通过 fork 创建子进程时不会立刻触发大量内存的拷贝，内存在被修改时会以页为单位进行拷贝，这也就避免了大量拷贝内存而带来的性能问题；</li>
+</ol>
+</li>
+</ul>
+<h3 id="参考文章："><a href="#参考文章：" class="headerlink" title="参考文章："></a>参考文章：</h3><ol>
+<li><a href="https://www.cnblogs.com/biyeymyhjob/archive/2012/07/20/2601655.html（linux" target="_blank" rel="noopener">https://www.cnblogs.com/biyeymyhjob/archive/2012/07/20/2601655.html（linux</a> 写时拷贝）</li>
+<li><a href="https://redisbook.readthedocs.io/en/latest/internal/rdb.html（RDB）" target="_blank" rel="noopener">https://redisbook.readthedocs.io/en/latest/internal/rdb.html（RDB）</a></li>
+<li><a href="http://www.redis.cn/topics/persistence.html（redis持久化）" target="_blank" rel="noopener">http://www.redis.cn/topics/persistence.html（redis持久化）</a></li>
+<li><a href="https://draveness.me/whys-the-design-redis-bgsave-fork/（RDB）" target="_blank" rel="noopener">https://draveness.me/whys-the-design-redis-bgsave-fork/（RDB）</a></li>
+</ol>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/06/07/redis%E7%9A%84%E6%8C%81%E4%B9%85%E5%8C%96%E5%AD%98%E5%82%A8RDB%E7%9A%84%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-坑爹的一次内存分析！！" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -1047,92 +1145,6 @@ private static class FooGuard implements Guard&lt;States, Events&gt; {
       
         <p class="article-more-link">
           <a class="article-more-a" href="/2020/05/21/520%E5%88%9D%E5%A7%8BMongoDB/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-复盘" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/05/19/%E5%A4%8D%E7%9B%98/">复盘</a>
-    </h1>
-  
-
-        
-        <a href="/2020/05/19/%E5%A4%8D%E7%9B%98/" class="archive-article-date">
-  	<time datetime="2020-05-18T16:03:01.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-19</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <ol>
-<li><p>你所毕业的学校真的对于你来很重要。</p>
-<ul>
-<li>第一件事： 那天中午，有一个今年就要毕业的实习生，很兴奋的跑过来跟我说：“X哥，我现在接受X业务模块了，听G哥说，你熟悉这块逻辑，以后还得多问问你。”。不得不说我挺替这位实习生高兴的。我说好啊，有问题你过来问我就行。然后过了有半个星期。我和那个实习生的师傅吃饭，我说怎么不见实习生了。他说：“被HR劝退了！”。我当时挺疑问的：“这娃挺上进的，怎么就不要了呢？”。他师傅说：“学校不行，今年就业形式不行，公司现在招985，211的哪些！”。</li>
-</ul>
-</li>
-<li><p>每一件事情对于你来说都很重要</p>
-</li>
-</ol>
-<ul>
-<li>第二件事： 公司组织业务考试，考试系统有bug，大家都是搞研发的，一不说二不休的直接把答案都搞出来了。最后大部分都考了高分。因为有满分且做的很快，于是高层领导怀疑有人作弊。组织让高分进行了重考，极少数人重视了第二次考试考过了，大部分人没有重视随意一答就出了考场。于是公司在没考过的人里面追查了下来。大部分人降职降薪。 到最后谁也没想到会有这么严重的结果。</li>
-</ul>
-<p>这两件事情虽然我都幸免于难。但对我的感触颇为深厚。就当是今天通过这两件事情复盘一下自己。 </p>
-<p>从去年大学毕业都很顺利，一直到现在都还好，没有遇到什么大的困难和坎坷。也学到了很多东西，也养成了一些好的习惯。 </p>
-<p>但是针对于上面的两件事情，我都不够好，第一件我不是什么名校，但这只能怪以前的自己不够优秀，不够好。不能责怪现在的自己，一切问题都会有办法来解决。 那就是现在的自己弥补以前自己的缺失。不晚，一点也不晚。只要能静下心来，能够用心，这都是可以弥补过来的。就比如定个目标，让自己去一个可以“镀金”的公司。不断的去学习，提高自己的认知，提高自己的知识储备。到目前来看我有做到第一步不断提高自己的知识储备。但是还是不能够静下心来（效率不够高），目标还不是很明确，还有就是不够自信。再次在这里劝诫自己多出去“实战，实战”。</p>
-<p>第二件事情对于我来说，完全是幸运，因为我当时也有“抄袭”，大概是没有抄好，到最后没有考到很高分。甚至我在考完得到分数感觉有一些懊悔（这他妈才考了这么点）。我完全没有重视这场考试，没有预习也没有复习。甚至“抄袭也没有抄好”。这就是问题。仔细想想以前的很多的小的问题我都没有做好，甚至到今天突然想到leader安排的一个指标监控还没有做好（有些时间了）。这就是问题吧。不得不承认我是一个邋遢的人。甚至可以说在平日里计划都不很明确的人。不是一个细心的人。大概是这样。没有计划，就会遗漏。再想想我真的做的很差在这方面。 这就是我的短板之一，写到这里还算是明确了。是的有短板就需要刻意练习。再扯回“对每件事都要重视”这件事情上，就说事我重视了这件事情，还有就是踏踏实实的自己干，那我完全不用浪费我的运气了。我会顺顺当当的过关。这又映射出另一件事情：“那就是踏踏实实做自己”。大概就是这样。写到这里也算明确了和正确理解了这两件事情。</p>
-<p>总结一下：</p>
-<ol>
-<li>继续加油持续充电，明确目标不断前进。</li>
-<li>计划明确细心静心，脚踏实地弥补短板。</li>
-</ol>
-<ul>
-<li>共勉！！！<br>我感觉我适合做一个Rapper</li>
-</ul>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/05/19/%E5%A4%8D%E7%9B%98/">展开全文 >></a>
         </p>
       
 
