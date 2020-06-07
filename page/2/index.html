@@ -142,6 +142,80 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-520初始MongoDB" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/05/21/520%E5%88%9D%E5%A7%8BMongoDB/">520初始MongoDB</a>
+    </h1>
+  
+
+        
+        <a href="/2020/05/21/520%E5%88%9D%E5%A7%8BMongoDB/" class="archive-article-date">
+  	<time datetime="2020-05-20T18:08:42.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-21</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p> 由于我们在开发的过程中难免会遇到数据库选型的问题，那么数据库的选型那我们必须通过结合我们的业务场景还有他们的设计初衷，及各自在各个方面的优势。现在我们就在业务开发中遇到了选择 mongoDB还时MYsql。之前没有怎么了解过mongoDB，那今天就开始我的mongoDB第一步。</p>
+<h2 id="设计的初衷"><a href="#设计的初衷" class="headerlink" title="设计的初衷"></a>设计的初衷</h2><p>建立一种灵活，高效，易于扩展，功能完备的数据库。</p>
+<h2 id="1-丰富的数据模型"><a href="#1-丰富的数据模型" class="headerlink" title="1. 丰富的数据模型"></a>1. 丰富的数据模型</h2><ul>
+<li>mongo是面向文档的数据库，为了获得更好的扩展性采用的不是关系型数据库，使用一条记录就可以表示非常复杂的层次关系</li>
+<li>没有固定的模式，文档的键值可以在应用层进行自己处理<h2 id="2-容易扩展"><a href="#2-容易扩展" class="headerlink" title="2. 容易扩展"></a>2. 容易扩展</h2></li>
+<li>由于大数据时代的来临，开发者遇到的问题就是如何扩展数据库。一般的关系性数据库做拓展最简单的方式也就是分库分表等，但是mongo采用的是文档模式可以自动在多台服务器间进行分割数据。还可以自动平衡负载和自动重排文档等<h2 id="3-丰富的功能"><a href="#3-丰富的功能" class="headerlink" title="3. 丰富的功能"></a>3. 丰富的功能</h2></li>
+<li>索引<br>  1.拥有铺筑索引，能进行多种快速查询，也提供唯一的，复合的和地理空间索引能力</li>
+<li>存储JavaScript</li>
+<li>聚合 MapReduce和其他聚合工具</li>
+<li>固定集合 集合的大小是有上限的</li>
+<li>文件存储 存储大型文件和文件元数据<br>但是也有关系数据库中的功能不具备，那就是join查询，和多行事物。mongo的架构是为了提高性能和扩展性，但是这两个功能很难在一个分布式系统上实现。<h2 id="4-不牺牲速度"><a href="#4-不牺牲速度" class="headerlink" title="4. 不牺牲速度"></a>4. 不牺牲速度</h2>mongo的主要目标是卓越的性能，使用的传输协议是自己的传输协议作为服务器间交互的主要方式，他对文档进行动态填充，将内存管理工作交给操作系统去处理动态查询优化器会记住执行查询最高效的方式，也将类似于关系型数据库中的一部分业务交给了客户端去处理。<h2 id="5-简便的管理"><a href="#5-简便的管理" class="headerlink" title="5.简便的管理"></a>5.简便的管理</h2>MonogDB尽量让服务器自治来简化数据库的管理。除了启动就再也没有什，么需要管理的地方了。如果有节点挂掉，mongo会自动去切换到从节点的机器上。 mongo的管理理念是尽可能的让服务器进行自动配置，让用户在需要时候调整设置。<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2>所有新事物的产生，都会有产生的原因，mongo也不列外，硬件水平提升，大数据时代的到来，关系型数据库出现暴露出了自己的性能瓶颈，如：全文检索导致数据响应时间慢，数据模型的固定导致业务修改成本高等等。mongo通过牺牲关系型数据库中部分功能（事物，join关联）来提高数据库的灵活性和高效性。及支持自动分区，提高数据库的扩展性</li>
+</ul>
+<h2 id="想一下和mysql关系型数据库的区别？-mysql的优势是什么呢？"><a href="#想一下和mysql关系型数据库的区别？-mysql的优势是什么呢？" class="headerlink" title="想一下和mysql关系型数据库的区别？ mysql的优势是什么呢？"></a>想一下和mysql关系型数据库的区别？ mysql的优势是什么呢？</h2>
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/05/21/520%E5%88%9D%E5%A7%8BMongoDB/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-复盘" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -1089,94 +1163,6 @@
       
         <p class="article-more-link">
           <a class="article-more-a" href="/2020/05/17/JVM%E7%BA%BF%E4%B8%8A%E5%86%85%E5%AD%98%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-请分清楚Java内存区域和Java内存模型" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/05/17/%E8%AF%B7%E5%88%86%E6%B8%85%E6%A5%9AJava%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E5%92%8CJava%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/">请分清楚Java内存区域和Java内存模型</a>
-    </h1>
-  
-
-        
-        <a href="/2020/05/17/%E8%AF%B7%E5%88%86%E6%B8%85%E6%A5%9AJava%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E5%92%8CJava%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="archive-article-date">
-  	<time datetime="2020-05-16T17:14:49.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-17</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p><strong>java内存区域是java虚拟机在执行java程序的时候会把它所管理的内存进行划分不同的数据区域</strong>。<br><strong>但是java内存模型是为了屏蔽各种硬件和操作系统的内存访问的差异，已实现java程序在不同的操作系统中都能达到一致的访问效果</strong></p>
-<h2 id="Java内存区域"><a href="#Java内存区域" class="headerlink" title="Java内存区域"></a>Java内存区域</h2><p><strong>1. 线程共享区</strong>：</p>
-<ul>
-<li>堆：堆可分为eden区和survior to和survior from 区 刚创建的对象，且堆内存够放下这个对象，都会放在eden区。</li>
-<li>方法区： 存储已经被加载的类信息，常量，静态变量，即时编译后的代码等数据。在hotspot虚拟机中方法区也被称为老年代。</li>
-</ul>
-<p><strong>2. 线程独享区</strong></p>
-<ul>
-<li>Java虚拟机栈：在我们代码在运行是调用一个方法就会创建一个栈帧用于存储局部变量表，动态链接，操作数栈，方法出口等。调用方法的过程也就是压栈和弹栈的过程，栈的数据结构是先进后出的我们可以想一下主方法调用其他方法，其他方法调用完成那其他的方法就弹栈了谈完后其以及已经将动态链接的数据已经改变，于是你的主方法内的数据也随即改变。仔细品品。</li>
-<li>本地方发栈： 本地方法栈和Java虚拟机栈的作用类似，Java虚拟机栈是为java方法的使用而执行的，但是本地方法栈是为了Java虚拟机调用的native方法执行的。正是因为本地方法栈不会限制使用的语言，使用的方法还有数据结构。</li>
-<li>程序计数器：粗糙一点也就是为了记录代码执行到那一块了。还有就是我们在执行多线程的时候，在虚拟机中并不是所谓的同步执行的，而是通过线程的切换并分配处理器的时间的方式来实现的，所以在切换的过程中有的线程执行了一半，又切换到了其他线程那就得将其字节码指令执行到那一块就得记录下来，这也是程序计数器为什么是私有的原因。</li>
-</ul>
-<p><strong>3. 直接内存</strong>（非Java虚拟机中运行时动态区域，但是也会引起OOM）<br><img src="https://img-blog.csdnimg.cn/20200504003454150.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="\[外链图片转存失败,源站可能有防盗链机制,建议将图片保存下来直接上传(img-MSDffKes-1588523651379)(47A49CD3238948398729B5DD70C4D87F)\]"></p>
-<ul>
-<li>直接内存并不属于JVM动态运行时区域，我们在使用NIO的时候基于通道与缓冲区的方式（buffer）的I/O的方式，他可以使用native函数库直接分配堆外内存 ，然后通过存储在Java堆种的dirctyByteBuffer对象作为这块堆内存的一面用进行操作。<h2 id="java内存模型"><a href="#java内存模型" class="headerlink" title="java内存模型"></a>java内存模型</h2></li>
-</ul>
-<ol>
-<li>Java的内存模型重要的目标是定义程序中的各个变量的访问规则。即在虚拟机中将变量存储到内存和从内存中取出变量这样的底层细节。此处变量只是针对全局变量和静态字段，和构成数组的对象元素。</li>
-<li>Java的内存模型分为 主内存，工作内存。</li>
-</ol>
-<ul>
-<li>工作内存：每一个线程都拥有自己的工作内存，工作内存保存的是从主内存复制拷贝过来的副本,不同的线程之间是不可以直接进行工作内存的访问，必须通过主内存作为中间人才可以访问。</li>
-<li>主内存：主内存就用来存放所有的公共变量。线程间可以共享的变量。</li>
-<li>Java内存模型和Java运行时动态内存模型类比的话，那么主内存就是其Java堆中的那些对象实例，而工作内存区域就是Java虚拟机栈中的局部变量表还有refrence所指向的数据，还有方法参数等。<br><img src="https://img-blog.csdnimg.cn/20200504003626339.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><h3 id="思考一下"><a href="#思考一下" class="headerlink" title="思考一下"></a>思考一下</h3></li>
-</ul>
-<p><strong>volatile关键字是如何达到变量在各个线程间是可见的呢？</strong></p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/05/17/%E8%AF%B7%E5%88%86%E6%B8%85%E6%A5%9AJava%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E5%92%8CJava%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/">展开全文 >></a>
         </p>
       
 

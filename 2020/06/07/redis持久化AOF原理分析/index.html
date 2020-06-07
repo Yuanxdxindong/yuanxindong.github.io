@@ -6,21 +6,22 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://www.yuanxindong.com">
-  <title>redis的持久化存储RDB的原理分析 | Welcome to Jeff&#39;s blog</title>
+  <title>redis持久化AOF原理分析 | Welcome to Jeff&#39;s blog</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="背景想到redis，你的第一反应是什么呢？redis很快，我们一般一用它做缓存，再想想他为什么快呢？也许你的第一反应和我的第一反应是一样的，因为他是基于内存存储的，IO多路复用等。那么既然是基于内存存储的，那要是redis当宕机了那岂不是内存的数据都无法恢复了（在一些特殊情况下数据比较重要的情况）。那redis是如何解决这一问题？那就是redis的持久化机制。 redis持久化机制redis 有两">
+  <meta name="description" content="背景上篇文章我们将了RDB的原理，这节来看看AOF。AOF字面的意思是，append only file仅追加文件。AOF 是以协议文本的方式，将所有对数据库进行过写入的命令（及其参数）记录到 AOF 文件，以此达到记录数据库状态的目的。是不是和mysql的binlog日志模式还是有点类似mysql的binlog是记录所有数据库表结构变更（例如CREATE、ALTER TABLE…）以及表数据修改">
 <meta property="og:type" content="article">
-<meta property="og:title" content="redis的持久化存储RDB的原理分析">
-<meta property="og:url" content="http://www.yuanxindong.com/2020/06/07/redis%E7%9A%84%E6%8C%81%E4%B9%85%E5%8C%96%E5%AD%98%E5%82%A8RDB%E7%9A%84%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/index.html">
+<meta property="og:title" content="redis持久化AOF原理分析">
+<meta property="og:url" content="http://www.yuanxindong.com/2020/06/07/redis%E6%8C%81%E4%B9%85%E5%8C%96AOF%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/index.html">
 <meta property="og:site_name" content="Welcome to Jeff&#39;s blog">
-<meta property="og:description" content="背景想到redis，你的第一反应是什么呢？redis很快，我们一般一用它做缓存，再想想他为什么快呢？也许你的第一反应和我的第一反应是一样的，因为他是基于内存存储的，IO多路复用等。那么既然是基于内存存储的，那要是redis当宕机了那岂不是内存的数据都无法恢复了（在一些特殊情况下数据比较重要的情况）。那redis是如何解决这一问题？那就是redis的持久化机制。 redis持久化机制redis 有两">
+<meta property="og:description" content="背景上篇文章我们将了RDB的原理，这节来看看AOF。AOF字面的意思是，append only file仅追加文件。AOF 是以协议文本的方式，将所有对数据库进行过写入的命令（及其参数）记录到 AOF 文件，以此达到记录数据库状态的目的。是不是和mysql的binlog日志模式还是有点类似mysql的binlog是记录所有数据库表结构变更（例如CREATE、ALTER TABLE…）以及表数据修改">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://img-blog.csdnimg.cn/20200607003445316.png">
-<meta property="article:published_time" content="2020-06-06T16:36:52.000Z">
-<meta property="article:modified_time" content="2020-06-06T16:37:35.055Z">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200607164906603.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200607164933588.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
+<meta property="article:published_time" content="2020-06-07T08:52:27.000Z">
+<meta property="article:modified_time" content="2020-06-07T08:52:55.252Z">
 <meta property="article:author" content="yuanxindong">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20200607003445316.png">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20200607164906603.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70">
   
     <link rel="alternative" href="/atom.xml" title="Welcome to Jeff&#39;s blog" type="application/atom+xml">
   
@@ -144,62 +145,133 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-redis的持久化存储RDB的原理分析" class="article article-type-post " itemscope itemprop="blogPost">
+            <article id="post-redis持久化AOF原理分析" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 class="article-title" itemprop="name">
-      redis的持久化存储RDB的原理分析
+      redis持久化AOF原理分析
     </h1>
   
 
         
-        <a href="/2020/06/07/redis%E7%9A%84%E6%8C%81%E4%B9%85%E5%8C%96%E5%AD%98%E5%82%A8RDB%E7%9A%84%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/" class="archive-article-date">
-  	<time datetime="2020-06-06T16:36:52.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-06-07</time>
+        <a href="/2020/06/07/redis%E6%8C%81%E4%B9%85%E5%8C%96AOF%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/" class="archive-article-date">
+  	<time datetime="2020-06-07T08:52:27.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-06-07</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>想到redis，你的第一反应是什么呢？redis很快，我们一般一用它做缓存，再想想他为什么快呢？也许你的第一反应和我的第一反应是一样的，因为他是基于内存存储的，IO多路复用等。那么既然是基于内存存储的，那要是redis当宕机了那岂不是内存的数据都无法恢复了（在一些特殊情况下数据比较重要的情况）。那redis是如何解决这一问题？那就是redis的持久化机制。</p>
-<h3 id="redis持久化机制"><a href="#redis持久化机制" class="headerlink" title="redis持久化机制"></a>redis持久化机制</h3><p>redis 有两种持久化方式，RDB和AOF，今天我们主要先聊聊RDB持久化数据</p>
-<h4 id="1-RDB"><a href="#1-RDB" class="headerlink" title="1. RDB"></a>1. RDB</h4><ul>
-<li><p>权威指南（<a href="http://www.redis.cn/topics/persistence.html" target="_blank" rel="noopener">redis官方文档</a>） “RDB持久化方式能够在指定的时间间隔能对你的数据进行快照存储.”</p>
-</li>
-<li><p>我们看看RDB的使用：RDB 功能最核心的是 rdbSave 和 rdbLoad 两个函数， 前者用于生成 RDB 文件到磁盘， 而后者则用于将 RDB 文件中的数据重新载入到内存中：<br><img src="https://img-blog.csdnimg.cn/20200607003445316.png" alt="在这里插入图片描述"></p>
-</li>
-<li><p>根就上面的描述，首先是他是主动的，在一定的时间区间就会主动触发程序同步，可想而知，在出发同步的时候会影响redis的业务操作吗? 会出现类似垃圾回收机制中的Stop The word （数据）？ 所以我们就得看看他的底层实现。</p>
-<h5 id="RDB底层实现"><a href="#RDB底层实现" class="headerlink" title="RDB底层实现"></a>RDB底层实现</h5><p>从RDB的两个命令说起：SAVE 和 BGSAVE </p>
-</li>
-<li><p>SAVE 命令直接调用rdbsave函数，会阻塞Redis主线程，直到同步保存数据完成，在这个过程中客户端的任务一个也不能执行。我们在这里同时也得到了另一个信息，那就是redis是单线程的。所以这个线程杯哦</p>
-</li>
-<li><p>BGSAVE 会fork出一个==子进程==（这里注意了是子进程不是线程），子进程负责调用rdbSave，并在保存完毕完成后向主线程发送信号通知主进程保存完毕。这个时候主进程程也是会处理客户端的数据的。所以我们在此也会留下疑问那就是为什么要通知主进程呢？ </p>
-</li>
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>上篇文章我们将了RDB的原理，这节来看看AOF。<br>AOF字面的意思是，append only file仅追加文件。<br>AOF 是以协议文本的方式，将所有对数据库进行过写入的命令（及其参数）记录到 AOF 文件，以此达到记录数据库状态的目的。是不是和mysql的binlog日志模式还是有点类似<br>mysql的binlog是记录所有数据库表结构变更（例如CREATE、ALTER TABLE…）以及表数据修改（INSERT、UPDATE、DELETE…）的二进制日志。</p>
+<h2 id="AOF"><a href="#AOF" class="headerlink" title="AOF"></a>AOF</h2><p> AOF是通过记录写入的命令来同步和恢复数据的。那就先从这么一个过程入手，他是怎么一个实现过程呢？<br><img src="https://img-blog.csdnimg.cn/20200607164906603.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h2 id="AOF运行的底层步骤"><a href="#AOF运行的底层步骤" class="headerlink" title="AOF运行的底层步骤"></a>AOF运行的底层步骤</h2><h3 id="1-命令传播（命令从客户端到AOF程序的过程）"><a href="#1-命令传播（命令从客户端到AOF程序的过程）" class="headerlink" title="1. 命令传播（命令从客户端到AOF程序的过程）"></a>1. 命令传播（命令从客户端到AOF程序的过程）</h3><ol>
+<li>当我们在客户端执行一个命令的时候，通过网络连接让redis服务端接受命令，它会根据协议文本的内容， 选择适当的命令函数， 并将各个参数从字符串文本转换为 Redis 字符串对象（StringObject）。当命令参数执行成功的时候会将命令参数传播到AOF程序中。然后对其进行下一步操作，那就是将命令参数转换为协议文本进行存储。<br><img src="https://img-blog.csdnimg.cn/20200607164933588.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></li>
+<li>这是有问题的，当AOF程序挂掉的时候该怎么办？那岂不是缓存失败了<h3 id="2-缓存追加"><a href="#2-缓存追加" class="headerlink" title="2.缓存追加"></a>2.缓存追加</h3></li>
+<li>上面也说到了，当执行完操作命令的时候，会将执行的参数命令传播到AOF程序，</li>
+</ol>
+<ul>
+<li>这个时候AOF程序会将命令参数转回原来的网络协议文本。</li>
+<li>它会被追加到 redis.h/redisServer 结构的 aof_buf 末尾。<h3 id="3-文件的写入和保存"><a href="#3-文件的写入和保存" class="headerlink" title="3. 文件的写入和保存"></a>3. 文件的写入和保存</h3>每当服务器常规任务函数被执行、 或者事件处理器被执行时， aof.c/flushAppendOnlyFile 函数都会被调用， 这个函数执行以下两个工作：</li>
 </ul>
-<p>在同步到磁盘和持续写入这个过程是如何处理数据不一致的情况呢？这几句是他redis为什么用子进程而不用子线程的原因之一，一个进程他可以包含多个线程，这多个线程是使用的这个进程分配下来的内存地址进行工作的。所以说多个进程之间的内存地址是相互独立的了，所以这也就是说不会出现在线程内加锁的情况，加锁必然会造成延时（除偏向锁等特殊锁类型）降低性能。</p>
-<p>==既然是两个进程那如何同步另一个进程中的数据到另一个进程呢==？同步的这个过程内存中的数据是不断的在变化的，且两个进程也操作的同一个数据啊，线程安全的概念：<em>线程安全是程式设计中的术语，指某个函数、函数库在多线程环境中被调用时，能够正确地处理多个线程之间的共享变量，使程序功能正确完成。（来自维基百科）</em> 这岂不是进程安全问题？（自造）  </p>
-<p>我们先看redis的具体是怎么做的，下面是伪代码，<br>也就是调用了fork（）方法。<em>在计算机编程领域，尤其是 Unix 和类 Unix 系统中，fork 都是一个进程用于创建自己拷贝的操作，它往往都是被操作系统内核实现的系统调用，也是操作系统在 *nix 系统中创建新进程的主要方法。当程序调用了 fork 方法之后，我们就可以通过 fork 的返回值确定父子进程，以此来执行不同的操作：<br>fork 函数返回 0 时，意味着当前进程是子进程；<br>fork 函数返回非 0 时，意味着当前进程是父进程，返回值是子进程的 pid；在 fork 的 手册 中，我们会发现调用 fork 后的父子进程会运行在不同的内存空间中，当 fork 发生时两者的内存空间有着完全相同的内容，对内存的写入和修改、文件的映射都是独立的，两个进程不会相互影响。</em>，可想而知，由于RDB存储的是某一时间点之前的快照，所以父进程写入新的数据并不会影响子进程。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">    def BGSAVE():</span><br><span class="line">pid &#x3D; fork()</span><br><span class="line"></span><br><span class="line">    if pid &#x3D;&#x3D; 0:</span><br><span class="line"></span><br><span class="line">        # 子进程保存 RDB</span><br><span class="line">        rdbSave()</span><br><span class="line"></span><br><span class="line">    elif pid &gt; 0:</span><br><span class="line"></span><br><span class="line">        # 父进程继续处理请求，并等待子进程的完成信号</span><br><span class="line">        handle_request()</span><br><span class="line"></span><br><span class="line">    else:</span><br><span class="line"></span><br><span class="line">        # pid &#x3D;&#x3D; -1</span><br><span class="line">        # 处理 fork 错误</span><br><span class="line">        handle_fork_error()</span><br></pre></td></tr></table></figure>
+<p>WRITE：根据条件，将 aof_buf 中的缓存写入到 AOF 文件。</p>
+<p>SAVE：根据条件，调用 fsync 或 fdatasync 函数，将 AOF 文件保存到磁盘中。</p>
+<p>两个步骤都需要根据一定的条件来执行， 而这些条件由 AOF 所使用的保存模式来决定， 以下小节就来介绍 AOF 所使用的三种保存模式， 以及在这些模式下， 步骤 WRITE 和 SAVE 的调用条件。</p>
+<h3 id="4-AOF-保存模式"><a href="#4-AOF-保存模式" class="headerlink" title="4. AOF 保存模式"></a>4. AOF 保存模式</h3><p>Redis 目前支持三种 AOF 保存模式，它们分别是：</p>
+<p><strong>AOF_FSYNC_NO</strong> ：不保存。<br><strong>AOF_FSYNC_EVERYSEC</strong> ：每一秒钟保存一次。<br><strong>AOF_FSYNC_ALWAYS</strong> ：每执行一个命令保存一次</p>
+<h4 id="不保存"><a href="#不保存" class="headerlink" title="不保存"></a>不保存</h4><p>在这种模式下， 每次调用 flushAppendOnlyFile 函数， WRITE 都会被执行， 但 SAVE 会被略过。</p>
+<p>在这种模式下， SAVE 只会在以下任意一种情况中被执行：</p>
+<p>Redis 被关闭<br>AOF 功能被关闭<br>系统的写缓存被刷新（可能是缓存已经被写满，或者定期保存操作被执行）<br>这三种情况下的 SAVE 操作都会引起 Redis 主进程阻塞。</p>
+<h4 id="每秒执行一次"><a href="#每秒执行一次" class="headerlink" title="每秒执行一次"></a>每秒执行一次</h4><p>在这种模式中， SAVE 原则上每隔一秒钟就会执行一次， 因为 SAVE 操作是由后台子线程调用的， 所以它不会引起服务器主进程阻塞。在上一句的说明里面使用了词语“原则上”， 在实际运行中， 程序在这种模式下对 fsync 或 fdatasync 的调用并不是每秒一次， 它和调用 flushAppendOnlyFile 函数时 Redis 所处的状态有关。</p>
+<p>每当 flushAppendOnlyFile 函数被调用时， 可能会出现以下四种情况：</p>
+<p>子线程正在执行 SAVE ，并且：</p>
+<p>这个 SAVE 的执行时间未超过 2 秒，那么程序直接返回，并不执行 WRITE 或新的 SAVE 。<br>这个 SAVE 已经执行超过 2 秒，那么程序执行 WRITE ，但不执行新的 SAVE 。注意，因为这时 WRITE 的写入必须等待子线程先完成（旧的） SAVE ，因此这里 WRITE 会比平时阻塞更长时间。<br>子线程没有在执行 SAVE ，并且：</p>
+<p>上次成功执行 SAVE 距今不超过 1 秒，那么程序执行 WRITE ，但不执行 SAVE 。<br>上次成功执行 SAVE 距今已经超过 1 秒，那么程序执行 WRITE 和 SAVE 。<br>可以用流程图表示这四种情况：<br>[外链图片转存失败,源站可能有防盗链机制,建议将图片保存下来直接上传(img-h4ySGKhY-1591519560632)(<a href="http://note.youdao.com/yws/res/14486/A01447314E604073B6C7B8EC9CA92AD8)]" target="_blank" rel="noopener">http://note.youdao.com/yws/res/14486/A01447314E604073B6C7B8EC9CA92AD8)]</a><br>根据以上说明可以知道， 在“每一秒钟保存一次”模式下， 如果在情况 1 中发生故障停机， 那么用户最多损失小于 2 秒内所产生的所有数据。</p>
+<p>如果在情况 2 中发生故障停机， 那么用户损失的数据是可以超过 2 秒的。</p>
+<p>Redis 官网上所说的， AOF 在“每一秒钟保存一次”时发生故障， 只丢失 1 秒钟数据的说法， 实际上并不准确。</p>
+<h4 id="每执行一个命令保存一次"><a href="#每执行一个命令保存一次" class="headerlink" title="每执行一个命令保存一次"></a>每执行一个命令保存一次</h4><p>在这种模式下，每次执行完一个命令之后， WRITE 和 SAVE 都会被执行。</p>
+<p>另外，因为 SAVE 是由 Redis 主进程执行的，所以在 SAVE 执行期间，主进程会被阻塞，不能接受命令请求</p>
+<h2 id="AOF-保存模式对性能和安全性的影响"><a href="#AOF-保存模式对性能和安全性的影响" class="headerlink" title="AOF 保存模式对性能和安全性的影响"></a>AOF 保存模式对性能和安全性的影响</h2><p>对于三种 AOF 保存模式， 它们对服务器主进程的阻塞情况如下：</p>
+<p>不保存（AOF_FSYNC_NO）：写入和保存都由主进程执行，两个操作都会阻塞主进程。<br>每一秒钟保存一次（AOF_FSYNC_EVERYSEC）：写入操作由主进程执行，阻塞主进程。保存操作由子线程执行，不直接阻塞主进程，但保存操作完成的快慢会影响写入操作的阻塞时长。<br>每执行一个命令保存一次（AOF_FSYNC_ALWAYS）：和模式 1 一样。<br>因为阻塞操作会让 Redis 主进程无法持续处理请求， 所以一般说来， 阻塞操作执行得越少、完成得越快， Redis 的性能就越好。</p>
+<p>模式 1 的保存操作只会在AOF 关闭或 Redis 关闭时执行， 或者由操作系统触发， 在一般情况下， 这种模式只需要为写入阻塞， 因此它的写入性能要比后面两种模式要高， 当然， 这种性能的提高是以降低安全性为代价的： 在这种模式下， 如果运行的中途发生停机， 那么丢失数据的数量由操作系统的缓存冲洗策略决定。</p>
+<p>模式 2 在性能方面要优于模式 3 ， 并且在通常情况下， 这种模式最多丢失不多于 2 秒的数据， 所以它的安全性要高于模式 1 ， 这是一种兼顾性能和安全性的保存方案。</p>
+<p>模式 3 的安全性是最高的， 但性能也是最差的， 因为服务器必须阻塞直到命令信息被写入并保存到磁盘之后， 才能继续处理请求。</p>
+<p>综合起来，三种 AOF 模式的操作特性可以总结如下：</p>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>WRITE 是否阻塞？</th>
+<th>SAVE 是否阻塞？</th>
+<th>停机时丢失的数据量</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>AOF_FSYNC_NO</td>
+<td>阻塞</td>
+<td>阻塞</td>
+<td>操作系统最后一次对 AOF 文件触发 SAVE 操作之后的数据。</td>
+</tr>
+<tr>
+<td>AOF_FSYNC_EVERYSEC</td>
+<td>阻塞</td>
+<td>不阻塞</td>
+<td>一般情况下不超过 2 秒钟的数据。</td>
+</tr>
+<tr>
+<td>AOF_FSYNC_ALWAYS</td>
+<td>阻塞</td>
+<td>阻塞</td>
+<td>最多只丢失一个命令的数据。</td>
+</tr>
+</tbody></table>
+<h2 id="AOF-文件的读取和数据还原"><a href="#AOF-文件的读取和数据还原" class="headerlink" title="AOF 文件的读取和数据还原"></a>AOF 文件的读取和数据还原</h2><p>AOF 文件保存了 Redis 的数据库状态， 而文件里面包含的都是符合 Redis 通讯协议格式的命令文本。</p>
+<p>这也就是说， 只要根据 AOF 文件里的协议， 重新执行一遍里面指示的所有命令， 就可以还原 Redis 的数据库状态了。</p>
+<p>Redis 读取 AOF 文件并还原数据库的详细步骤如下：</p>
+<p>创建一个不带网络连接的伪客户端（fake client）。<br>读取 AOF 所保存的文本，并根据内容还原出命令、命令的参数以及命令的个数。<br>根据命令、命令的参数和命令的个数，使用伪客户端执行该命令。<br>执行 2 和 3 ，直到 AOF 文件中的所有命令执行完毕。<br>完成第 4 步之后， AOF 文件所保存的数据库就会被完整地还原出来。</p>
+<p>注意， 因为 Redis 的命令只能在客户端的上下文中被执行， 而 AOF 还原时所使用的命令来自于 AOF 文件， 而不是网络， 所以程序使用了一个没有网络连接的伪客户端来执行命令。 伪客户端执行命令的效果， 和带网络连接的客户端执行命令的效果， 完全一样。</p>
+<p>整个读取和还原过程可以用以下伪代码表示：</p>
+<p>def READ_AND_LOAD_AOF():</p>
+<pre><code># 打开并读取 AOF 文件
+file = open(aof_file_name)
+while file.is_not_reach_eof():
 
-<p>通过上面的分析和理解，但是还会有一个问题，也就是内存中数据量很大的时候，这个子进程在拷贝父进程的内存数据的时候会耗费大量的CPU时间片导致客户端的线程一直处于就绪状态。那这个问题应该如何解决呢？</p>
-<p>问题总是会被解决的，写时拷贝（COPY—ON-WRITE）意思就是在刚开始的时候调用fork（）方法，并不会将主进程的物理空间复制一份出来给子进程，子进程在此时会和主进程共享同一块物理内存空间，但是拥有不同的虚拟空间。所以在这个时候并不会出现大量数据的复制操作而是给子进程搞一个引用就ok了。所以我们上面所担心的问题也就解决了。</p>
-<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
-<li>我们通过上面的分析，RDB是redis定时持久化的一个业务逻辑，可以通过命令SAVA 和 BGSAVE 进行同步持久化，使用BGSAVA不会影响到客户端的使用。而使用SAVA会影响客户端的使用。BGSAVE的实现是通过调用fork（）和 rdbsave实现的，其中fork（）的意思就是创建一个子进程，且采用的是写时拷贝。</li>
-<li>为什么通过子进程来解决这个问题呢？<ol>
-<li>通过 fork 创建的子进程能够获得和父进程完全相同的内存空间，父进程对内存的修改对于子进程是不可见的，两者不会相互影响；</li>
-<li>通过 fork 创建子进程时不会立刻触发大量内存的拷贝，内存在被修改时会以页为单位进行拷贝，这也就避免了大量拷贝内存而带来的性能问题；</li>
-</ol>
-</li>
+    # 读入一条协议文本格式的 Redis 命令
+    cmd_in_text = file.read_next_command_in_protocol_format()
+
+    # 根据文本命令，查找命令函数，并创建参数和参数个数等对象
+    cmd, argv, argc = text_to_command(cmd_in_text)
+
+    # 执行命令
+    execRedisCommand(cmd, argv, argc)
+
+# 关闭文件
+file.close()</code></pre><p>作为例子， 以下是一个简短的 AOF 文件的内容：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">*2</span><br><span class="line">$6</span><br><span class="line">SELECT</span><br><span class="line">$1</span><br><span class="line">0</span><br><span class="line">*3</span><br><span class="line">$3</span><br><span class="line">SET</span><br><span class="line">$3</span><br><span class="line">key</span><br><span class="line">$5</span><br><span class="line">value</span><br><span class="line">*8</span><br><span class="line">$5</span><br><span class="line">RPUSH</span><br><span class="line">$4</span><br><span class="line">list</span><br><span class="line">$1</span><br><span class="line">1</span><br><span class="line">$1</span><br><span class="line">2</span><br><span class="line">$1</span><br><span class="line">3</span><br><span class="line">$1</span><br><span class="line">4</span><br><span class="line">$1</span><br><span class="line">5</span><br><span class="line">$1</span><br><span class="line">6</span><br></pre></td></tr></table></figure>
+
+<p>当程序读入这个 AOF 文件时， 它首先执行 SELECT 0 命令 —— 这个 SELECT 命令是由 AOF 写入程序自动生成的， 它确保程序可以将数据还原到正确的数据库上。</p>
+<p>然后执行后面的 SET key value 和 RPUSH 1 2 3 4 命令， 还原 key 和 list 两个键的数据。<br>==为了避免对数据的完整性产生影响， 在服务器载入数据的过程中， 只有和数据库无关的订阅与发布功能可以正常使用， 其他命令一律返回错误==</p>
+<h2 id="AOF-重写"><a href="#AOF-重写" class="headerlink" title="AOF 重写"></a>AOF 重写</h2><p>AOF 文件通过同步 Redis 服务器所执行的命令， 从而实现了数据库状态的记录， 但是， 这种同步方式会造成一个问题： 随着运行时间的流逝， AOF 文件会变得越来越大。</p>
+<p>举个例子， 如果服务器执行了以下命令：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">RPUSH list 1 2 3 4      &#x2F;&#x2F; [1, 2, 3, 4]</span><br><span class="line"></span><br><span class="line">RPOP list               &#x2F;&#x2F; [1, 2, 3]</span><br><span class="line"></span><br><span class="line">LPOP list               &#x2F;&#x2F; [2, 3]</span><br><span class="line"></span><br><span class="line">LPUSH list 1            &#x2F;&#x2F; [1, 2, 3]</span><br></pre></td></tr></table></figure>
+
+<p>那么光是记录 list 键的状态， AOF 文件就需要保存四条命令。</p>
+<p>另一方面， 有些被频繁操作的键， 对它们所调用的命令可能有成百上千、甚至上万条， 如果这样被频繁操作的键有很多的话， AOF 文件的体积就会急速膨胀， 对 Redis 、甚至整个系统的造成影响。</p>
+<p>为了解决以上的问题， Redis 需要对 AOF 文件进行重写（rewrite）： 创建一个新的 AOF 文件来代替原有的 AOF 文件， 新 AOF 文件和原有 AOF 文件保存的数据库状态完全一样， 但新 AOF 文件的体积小于等于原有 AOF 文件的体积。</p>
+<p>以下就来介绍 AOF 重写的实现方式。</p>
+<h2 id="AOF-重写的实现"><a href="#AOF-重写的实现" class="headerlink" title="AOF 重写的实现"></a>AOF 重写的实现</h2><p>AOF 重写可以由用户通过调用 BGREWRITEAOF 手动触发。</p>
+<p>另外， 服务器在 AOF 功能开启的情况下， 会维持以下三个变量：</p>
+<p>记录当前 AOF 文件大小的变量 aof_current_size 。<br>记录最后一次 AOF 重写之后， AOF 文件大小的变量 aof_rewrite_base_size 。<br>增长百分比变量 aof_rewrite_perc 。<br>每次当 serverCron 函数执行时， 它都会检查以下条件是否全部满足， 如果是的话， 就会触发自动的 AOF 重写：</p>
+<p>没有 BGSAVE 命令在进行。<br>没有 BGREWRITEAOF 在进行。<br>当前 AOF 文件大小大于 server.aof_rewrite_min_size （默认值为 1 MB）。<br>当前 AOF 文件大小和最后一次 AOF 重写后的大小之间的比率大于等于指定的增长百分比。<br>默认情况下， 增长百分比为 100% ， 也即是说， 如果前面三个条件都已经满足， 并且当前 AOF 文件大小比最后一次 AOF 重写时的大小要大一倍的话， 那么触发自动 AOF 重写。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>AOF 文件通过保存所有修改数据库的命令来记录数据库的状态。</li>
+<li>AOF 文件中的所有命令都以 Redis 通讯协议的格式保存。<br>不同的 AOF 保存模式对数据的安全性、以及 Redis 的性能有很大的影响。</li>
+<li>AOF 重写的目的是用更小的体积来保存数据库状态，整个重写过程基本上不影响 Redis 主进程处理命令请求。</li>
+<li>AOF 重写是一个有歧义的名字，实际的重写工作是针对数据库的当前值来进行的，程序既不读写、也不使用原有的 AOF 文件。</li>
+<li>AOF 可以由用户手动触发，也可以由服务器自动触发。<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2>参考文章： <a href="https://redisbook.readthedocs.io/en/latest/internal/aof.html" target="_blank" rel="noopener">https://redisbook.readthedocs.io/en/latest/internal/aof.html</a><br>参考文章： <a href="https://blog.csdn.net/weixin_40413961/article/details/106596413" target="_blank" rel="noopener">https://blog.csdn.net/weixin_40413961/article/details/106596413</a><br>大部分来源于文章1.</li>
 </ul>
-<h3 id="参考文章："><a href="#参考文章：" class="headerlink" title="参考文章："></a>参考文章：</h3><ol>
-<li><a href="https://www.cnblogs.com/biyeymyhjob/archive/2012/07/20/2601655.html（linux" target="_blank" rel="noopener">https://www.cnblogs.com/biyeymyhjob/archive/2012/07/20/2601655.html（linux</a> 写时拷贝）</li>
-<li><a href="https://redisbook.readthedocs.io/en/latest/internal/rdb.html（RDB）" target="_blank" rel="noopener">https://redisbook.readthedocs.io/en/latest/internal/rdb.html（RDB）</a></li>
-<li><a href="http://www.redis.cn/topics/persistence.html（redis持久化）" target="_blank" rel="noopener">http://www.redis.cn/topics/persistence.html（redis持久化）</a></li>
-<li><a href="https://draveness.me/whys-the-design-redis-bgsave-fork/（RDB）" target="_blank" rel="noopener">https://draveness.me/whys-the-design-redis-bgsave-fork/（RDB）</a></li>
-</ol>
 
       
 
@@ -258,7 +330,7 @@
     <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
     <p>扫一扫，分享到微信</p>
     <div class="wx-qrcode">
-      <img src="//pan.baidu.com/share/qrcode?url=http://www.yuanxindong.com/2020/06/07/redis%E7%9A%84%E6%8C%81%E4%B9%85%E5%8C%96%E5%AD%98%E5%82%A8RDB%E7%9A%84%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/" alt="微信分享二维码">
+      <img src="//pan.baidu.com/share/qrcode?url=http://www.yuanxindong.com/2020/06/07/redis%E6%8C%81%E4%B9%85%E5%8C%96AOF%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/" alt="微信分享二维码">
     </div>
 </div>
 
@@ -272,18 +344,9 @@
   
 <nav id="article-nav">
   
-    <a href="/2020/06/07/redis%E6%8C%81%E4%B9%85%E5%8C%96AOF%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/" id="article-nav-newer" class="article-nav-link-wrap">
-      <i class="icon-circle-left"></i>
-      <div class="article-nav-title">
-        
-          redis持久化AOF原理分析
-        
-      </div>
-    </a>
   
-  
-    <a href="/2020/06/04/%E5%9D%91%E7%88%B9%E7%9A%84%E4%B8%80%E6%AC%A1%E5%86%85%E5%AD%98%E5%88%86%E6%9E%90%EF%BC%81%EF%BC%81/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">坑爹的一次内存分析！！</div>
+    <a href="/2020/06/07/redis%E7%9A%84%E6%8C%81%E4%B9%85%E5%8C%96%E5%AD%98%E5%82%A8RDB%E7%9A%84%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">redis的持久化存储RDB的原理分析</div>
       <i class="icon-circle-right"></i>
     </a>
   
