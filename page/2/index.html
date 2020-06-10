@@ -142,6 +142,75 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-mongoDB白皮书" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/05/21/mongoDB%E7%99%BD%E7%9A%AE%E4%B9%A6/">mongoDB白皮书</a>
+    </h1>
+  
+
+        
+        <a href="/2020/05/21/mongoDB%E7%99%BD%E7%9A%AE%E4%B9%A6/" class="archive-article-date">
+  	<time datetime="2020-05-21T05:14:01.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-21</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        
+
+	<div class="row">
+    <embed src="https://webassets.mongodb.com/mongodb-architecture-guide-overview_cn.pdf" width="100%" height="550" type="application/pdf">
+	</div>
+
+
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/05/21/mongoDB%E7%99%BD%E7%9A%AE%E4%B9%A6/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-520初始MongoDB" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -1072,97 +1141,6 @@
       
         <p class="article-more-link">
           <a class="article-more-a" href="/2020/05/17/mysql%E4%B8%ADchar%E5%92%8Cvarchar/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-JVM线上内存问题排查" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/05/17/JVM%E7%BA%BF%E4%B8%8A%E5%86%85%E5%AD%98%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/">JVM线上内存问题排查</a>
-    </h1>
-  
-
-        
-        <a href="/2020/05/17/JVM%E7%BA%BF%E4%B8%8A%E5%86%85%E5%AD%98%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/" class="archive-article-date">
-  	<time datetime="2020-05-16T17:16:23.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-17</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h3 id="背景："><a href="#背景：" class="headerlink" title="背景："></a>背景：</h3><p>正在和同事在外面吃饭，突然钉钉报警，有一个服务的机器内存飙到百分之90%多。和同事大概聊了一下说是队列累积，机器消费不过来，具体原因也没有深问，又一同事，说看一下是那个对象占的内存，使用jmap，jstat。当时我也在旁边围观，由于之前有看过，我就说jmap在生产环境敢使用吗？</p>
-<h3 id="jmap，jstat的作用？"><a href="#jmap，jstat的作用？" class="headerlink" title="jmap，jstat的作用？"></a>jmap，jstat的作用？</h3><ol>
-<li>jmap 是内存影像工具，jmap用于生成堆转储快照（一般称为dump或者heapdump文件）也可以查看堆内对象示例的统计信息、查看 ClassLoader 的信息以及 finalizer 队列。</li>
-<li>使用参数 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-XX:+HeapDumpOnOutOfMemoryError</span><br></pre></td></tr></table></figure>
-，可以让虚拟机在 OOM 异常出现之后自动生成 dump 文件<br>使用参数 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-XX:+HeapDumpOnCtrlBreak</span><br></pre></td></tr></table></figure>
-然后使用 Ctrl+Break 生成<br>在 Linux 系统中使用 kill -3 发送进程退出信号“吓唬”虚拟机，让其生成 dump 文件）</li>
-</ol>
-<p><img src="https://img-blog.csdnimg.cn/20200422190105915.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="\[外链图片转存失败,源站可能有防盗链机制,建议将图片保存下来直接上传(img-OCb40veR-1587553128975)(46F37BAEACA9493FAF0FC1C9ED6886EF)\]"><br>2. jstat (JVM statistics Monitoring Tool)是用于监视虚拟机各种运行状态信息的命令行工具他可以显示本地或者远程虚拟机进程中的类装载，内存，垃圾收集，JIT编译等运行数据，在没有GUI图形界面 ,只提供了纯文本控制台环境的服务器上，他是运行期定位虚拟机的首选工具（周志明说）<br><img src="https://img-blog.csdnimg.cn/20200422190139964.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-<h3 id="jmap实战"><a href="#jmap实战" class="headerlink" title="jmap实战"></a>jmap实战</h3><p>[外链图片转存失败,源站可能有防盗链机制,建议将图片保存下来直接上传(img-lQojpBgg-1587553128990)(CF4BE02FA6C941DEB23E041B50C4FAE7)]</p>
-<ol>
-<li>首先我们使用jps命令查看当前运行在JVM上的应用的LVMID也就是我上图的28398</li>
-<li>拿到这个后使用jmap -dump命令<br><img src="https://img-blog.csdnimg.cn/20200422190200219.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">jmap -dump:format&#x3D;b,file&#x3D;dumpHeap.bin 28398</span><br></pre></td></tr></table></figure></li>
-<li>执行成功后使用ll就可以看到dump 下来的文件</li>
-<li>接下来我们可以使用其他的分析工具进行分析 如：jhat ，Visual VM，MAT等。周志明说：能用其他工具就不要用jhat原因是：一般不会在部署应用的服务器上进行分析dump文件，分析dump文件是一件非常耗费硬件资源的过程，第二个原因就是jhat很简陋。所以还是使用将多个功能放在一块的工具Visual VM来进行分析。</li>
-</ol>
-<p>Tips : 但是这个dump在生产环境中还是慎用，因为在dump文件的过程中为保证文件的准确性会停止所有的进程的（个人觉得有点类似于gc 中的stop the word）</p>
-<h3 id="jstat-实战"><a href="#jstat-实战" class="headerlink" title="jstat 实战"></a>jstat 实战</h3><p><img src="https://img-blog.csdnimg.cn/20200422190253806.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-<ol>
-<li>jps获取服务的LVMID</li>
-<li>jstat -gc </li>
-<li>我们从图中可以观察到 其中 S0 和 S1 指 Survivor0 区和 Survivor1区，E 即 Eden 区，O 指老年代，M 指 MetaSpace，元数据空间，CCS 是压缩使用比例，YGC：年轻代垃圾回收次数，FGC：老年代垃圾回收次数，FGCT：老年代垃圾回收消耗时间，GCT：垃圾回收消耗总时间。当我们拿到了生产上的信息，且进行了分析，那我们就得查看现有的配置。那就是用jinfo <h3 id="jinfo实战"><a href="#jinfo实战" class="headerlink" title="jinfo实战"></a>jinfo实战</h3><img src="https://img-blog.csdnimg.cn/20200422190310978.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="\[外链图片转存失败,源站可能有防盗链机制,建议将图片保存下来直接上传(img-88RzgrlE-1587553128999)(194849B176BF4920A366E5317A6EE32A)\]"></li>
-<li>不管怎样我们都得查找到LVMID</li>
-<li>通过jinfo查看得到该应用程序的现有配置。</li>
-<li>或者说我们使用的jekins自动化构建工具那我们可以在</li>
-</ol>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cd &#x2F;usr&#x2F;local&#x2F;deploy&#x2F;supervisord&#x2F;conf&#x2F;项目对应的conf文件</span><br></pre></td></tr></table></figure>
-<ol start="4">
-<li>cat 文件进行查看 应用的启动配置的配置文件。<h3 id="其实不是不可以使用jmap而是jmap-dump的使用的时候需要注意。有可能会导致服务停止！！"><a href="#其实不是不可以使用jmap而是jmap-dump的使用的时候需要注意。有可能会导致服务停止！！" class="headerlink" title="其实不是不可以使用jmap而是jmap -dump的使用的时候需要注意。有可能会导致服务停止！！"></a>其实不是不可以使用jmap而是jmap -dump的使用的时候需要注意。有可能会导致服务停止！！</h3></li>
-</ol>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/05/17/JVM%E7%BA%BF%E4%B8%8A%E5%86%85%E5%AD%98%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/">展开全文 >></a>
         </p>
       
 
