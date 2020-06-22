@@ -142,55 +142,712 @@
           <div id="js-content" class="content-ll">
             
   
-    <article id="post-JVM线上内存问题排查" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+    <article id="post-秒懂Java并发和线程安全" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2020/05/17/JVM%E7%BA%BF%E4%B8%8A%E5%86%85%E5%AD%98%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/">JVM线上内存问题排查</a>
+      <a class="article-title" href="/2020/05/27/%E7%A7%92%E6%87%82Java%E5%B9%B6%E5%8F%91%E5%92%8C%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/">秒懂Java并发和线程安全</a>
     </h1>
   
 
         
-        <a href="/2020/05/17/JVM%E7%BA%BF%E4%B8%8A%E5%86%85%E5%AD%98%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/" class="archive-article-date">
-  	<time datetime="2020-05-16T17:16:23.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-17</time>
+        <a href="/2020/05/27/%E7%A7%92%E6%87%82Java%E5%B9%B6%E5%8F%91%E5%92%8C%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/" class="archive-article-date">
+  	<time datetime="2020-05-26T17:13:34.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-27</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h3 id="背景："><a href="#背景：" class="headerlink" title="背景："></a>背景：</h3><p>正在和同事在外面吃饭，突然钉钉报警，有一个服务的机器内存飙到百分之90%多。和同事大概聊了一下说是队列累积，机器消费不过来，具体原因也没有深问，又一同事，说看一下是那个对象占的内存，使用jmap，jstat。当时我也在旁边围观，由于之前有看过，我就说jmap在生产环境敢使用吗？</p>
-<h3 id="jmap，jstat的作用？"><a href="#jmap，jstat的作用？" class="headerlink" title="jmap，jstat的作用？"></a>jmap，jstat的作用？</h3><ol>
-<li>jmap 是内存影像工具，jmap用于生成堆转储快照（一般称为dump或者heapdump文件）也可以查看堆内对象示例的统计信息、查看 ClassLoader 的信息以及 finalizer 队列。</li>
-<li>使用参数 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-XX:+HeapDumpOnOutOfMemoryError</span><br></pre></td></tr></table></figure>
-，可以让虚拟机在 OOM 异常出现之后自动生成 dump 文件<br>使用参数 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-XX:+HeapDumpOnCtrlBreak</span><br></pre></td></tr></table></figure>
-然后使用 Ctrl+Break 生成<br>在 Linux 系统中使用 kill -3 发送进程退出信号“吓唬”虚拟机，让其生成 dump 文件）</li>
+        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>在平时写代码的时候我们经常会说“这会不会有线程安全问题，是不是得加把锁呢？”，细细的品一下这句话，是包涵很多知识点在里面。线程？，线程安全？，什么时候才会出现线程安全？Java中的锁？ 等等。</p>
+<h3 id="知识点"><a href="#知识点" class="headerlink" title="知识点"></a>知识点</h3><h4 id="什么是线程？"><a href="#什么是线程？" class="headerlink" title="什么是线程？"></a>什么是线程？</h4><ol>
+<li>”线程是承载代码运行的载体“ 这是我脑子里飘出来的第一句话。</li>
+<li>看看WIKI百科是如何讲的： <em>线程（英语：thread）是操作系统能够进行运算调度的最小单位。大部分情况下，它被包含在进程之中，是进程中的实际运作单位。一条线程指的是进程中一个单一顺序的控制流，一个进程中可以并发多个线程，每条线程并行执行不同的任务。在Unix System V及SunOS中也被称为轻量进程（lightweight processes），但轻量进程更多指内核线程（kernel thread），而把用户线程（user thread）称为线程。</em></li>
+<li>好像我说的也没什么毛病，再具体总结一下“线程是操作系统调度程序执行的最小单位，线程是包含在进程里的，一个进程可以包含多个线程”。<h4 id="什么是线程的并发和并行"><a href="#什么是线程的并发和并行" class="headerlink" title="什么是线程的并发和并行"></a>什么是线程的并发和并行</h4></li>
+<li>并发 ： 指在某个时间段内，多个任务交替处理的能力。每个CPU不可能只顾着执行某一个线程，而不管其他线程，导致其他线程一直处于等待状态。所以CPU把可执行的时间片段 均匀的分为若干份，每个线程执行一段时间后，记录当前的工作状态，释放相关的执行资源并进入等待状态，让其他线程抢占CPU资源。</li>
+<li>并行：并行是指同时处理多任务的能力，比如多个CPU同时执行多个任务。<br>其实我们也可以举个列子： KTV唱歌的时候一个话筒，一首歌，被大家轮流使用去唱，就是并发（只不过这个多成很快，完全柑桔不到），多个人同时去唱就是并行。</li>
+<li>Java中一个线程“朝生夕死”的过程<br><img src="https://img-blog.csdnimg.cn/20200527010751609.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><ul>
+<li>创建一个线程：有三种方法，1. 继承Thread的类 2.实现Runable接口 3.实现Callable接口</li>
+<li>调用我们继承或实现接口的方法调用start方法启动线程，此时线程处于就绪状态（RUNABLE）这个时候线程被再一次调用会跑出异常。</li>
+<li>接下来如果顺利的话会进入执行状态（RUNNING），也就是run（）方法被执行。但是不顺利的话就会属于阻塞状态。</li>
+<li>进入阻塞状态有这几种方式：<ol>
+<li>同步阻塞：锁被其他线程占用，</li>
+<li>主动阻塞： 调用Thread方法主动让出CPU的执行权，比如sleep（），join（）等</li>
+<li>等待阻塞： 执行了wait（）<ul>
+<li>终止状态（DEAD），run（）执行结束，或者因异常推出后的状态，此状态不可逆转。</li>
+</ul>
+</li>
 </ol>
-<p><img src="https://img-blog.csdnimg.cn/20200422190105915.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="\[外链图片转存失败,源站可能有防盗链机制,建议将图片保存下来直接上传(img-OCb40veR-1587553128975)(46F37BAEACA9493FAF0FC1C9ED6886EF)\]"><br>2. jstat (JVM statistics Monitoring Tool)是用于监视虚拟机各种运行状态信息的命令行工具他可以显示本地或者远程虚拟机进程中的类装载，内存，垃圾收集，JIT编译等运行数据，在没有GUI图形界面 ,只提供了纯文本控制台环境的服务器上，他是运行期定位虚拟机的首选工具（周志明说）<br><img src="https://img-blog.csdnimg.cn/20200422190139964.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-<h3 id="jmap实战"><a href="#jmap实战" class="headerlink" title="jmap实战"></a>jmap实战</h3><p>[外链图片转存失败,源站可能有防盗链机制,建议将图片保存下来直接上传(img-lQojpBgg-1587553128990)(CF4BE02FA6C941DEB23E041B50C4FAE7)]</p>
+</li>
+</ul>
+</li>
+<li>在并发环境下会导致哪些问题呢？<ul>
+<li>那就是在线程之间操作一个共享变量的时候会出现程序预期之外的结果。这也就是线程的安全问题</li>
+<li>WIKI对线程安全的描述：<em>“线程安全是程式设计中的术语，指某个函数、函数库在多线程环境中被调用时，能够正确地处理多个线程之间的共享变量，使程序功能正确完成。”</em><h4 id="如何保证线程安全呢？"><a href="#如何保证线程安全呢？" class="headerlink" title="如何保证线程安全呢？"></a>如何保证线程安全呢？</h4></li>
+</ul>
+</li>
+<li>数据单线程内可见。单线程总是安全的。因为你只针对这个线程可见那么其他的线程对此参数做不了更改了。在我们平时在方法内定义的变量也就是局部变量，他就是安全的，局部变量会被存储在独立的虚拟机栈中的局部变量表中，虚拟机栈是在线程的私有区。所以与其他的线程是没有关联的。</li>
+<li>只读对象。那就是被定义为final的对象，且内部属性也得被定义为final不可变，一个对象被final修饰只是这个引用不会改变，但是内部的数据是可以改变的。所以内部属性也得被final修饰。如String，Integer等<br><img src="https://img-blog.csdnimg.cn/20200527010957535.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></li>
+<li>线程安全类。currentHashMap，HashTable，StringBuffer等买这些都是线程安全类其中内部方法都被加锁了。下图shihashTable的get方法 。currentHashMap采用的是分段锁hashTable的升级版。<br><img src="https://img-blog.csdnimg.cn/2020052701102862.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></li>
+<li>同步与锁机制。如果想要对某个对象进行并发操作，但是又不属于上述三类，那么我们开发就得自己去控制了，也是和他们类似的方式，让操作这个对象通过锁的方式同步执行。我们在日常开发中熟知的锁有两个<ul>
+<li>JUC 包中的sychronized，可重入锁，支持公平锁和公平锁。其内部实现是通过JUC包中的AQS，但是AQS中也使用到了JVM 的锁Sychronized。</li>
+<li>sychronized关键字是JVM底层实现的锁，在每一个对象都会有一个对象头，其中对象头中有几个字节专门表示对象的锁状态，在JDK1.6之前sychronized还是一个比较重量极的锁，但是后续进行了优化，就是锁拥有了几个状态，自旋锁，轻量级锁，重量级锁。使其效率提高了起来，且sychronized是非公平锁。<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
+<li>主要还是介绍了并发和Java中的线程，并发的概念，线程通过获取CPU的时间便进行交替执行的过程成为并发。并行就是真正的同时去执行几个线程。</li>
+<li>并发操作导致线程的安全问题，多个线程并发操作一个数据，导致数据出现程序执行意料之外的情况。</li>
+<li>防止线程安全的方式和现有方法或类。也就是两点“要么只读”和“要么加锁”。</li>
+<li>明天更新锁两把锁“sychronized”，“sychronized”的详细情况<h3 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h3>通过反射机制或字节码操纵技术会将不变的对象变化掉吗？</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/05/27/%E7%A7%92%E6%87%82Java%E5%B9%B6%E5%8F%91%E5%92%8C%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-final关键字你真的会用" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/05/26/final%E5%85%B3%E9%94%AE%E5%AD%97%E4%BD%A0%E7%9C%9F%E7%9A%84%E4%BC%9A%E7%94%A8/">final关键字你真的会用?</a>
+    </h1>
+  
+
+        
+        <a href="/2020/05/26/final%E5%85%B3%E9%94%AE%E5%AD%97%E4%BD%A0%E7%9C%9F%E7%9A%84%E4%BC%9A%E7%94%A8/" class="archive-article-date">
+  	<time datetime="2020-05-25T17:05:35.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-26</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>codeReview的时候，看到各种final关键字的”骚“操作，今天认真复习一下final关键字。<br>我们都知道final关键字可以使用到类上，也可以使用道方法上，也可以使用到数据上，但是他的使用会为我们提供哪些好处呢？</p>
+<h3 id="final关键自的使用"><a href="#final关键自的使用" class="headerlink" title="final关键自的使用"></a>final关键自的使用</h3><p>Java关键字final通常指的是“这是无法改变的”不想作出改变的原因有两种：设计和效率。由于一般使用这一方面对final不是很了解（例如我）导致使用目的不是很明确。导致使用错误。而达到反效果。final可以修饰数据，方法，和类</p>
+<h4 id="final数据"><a href="#final数据" class="headerlink" title="final数据"></a>final数据</h4><ol>
+<li>被final修饰过的数据，也就是向编译器说这个数据是不可改变了。 或者说在运行时初始化赋值后不可改变。</li>
+<li>在很多情况下我们都需要使用到静态编译器不变的常量。列如我们为了防止代码全局创建多个相同的数据，那我们就在全局定义一些“永不改变的编译时常量”，我们随便打开个源码看看大佬们对final的使用jUC包中的ThreadPoolExcutor类中的应用：</li>
+</ol>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"> *    When pool is empty</span><br><span class="line"> * TIDYING -&gt; TERMINATED</span><br><span class="line"> *    When the terminated() hook method has completed</span><br><span class="line"> *</span><br><span class="line"> * Threads waiting in awaitTermination() will return when the</span><br><span class="line"> * state reaches TERMINATED.</span><br><span class="line"> *</span><br><span class="line"> * Detecting the transition from SHUTDOWN to TIDYING is less</span><br><span class="line"> * straightforward than you&#39;d like because the queue may become</span><br><span class="line"> * empty after non-empty and vice versa during SHUTDOWN state, but</span><br><span class="line"> * we can only terminate if, after seeing that it is empty, we see</span><br><span class="line"> * that workerCount is 0 (which sometimes entails a recheck -- see</span><br><span class="line"> * below).</span><br><span class="line"> *&#x2F;</span><br><span class="line">private final AtomicInteger ctl &#x3D; new AtomicInteger(ctlOf(RUNNING, 0));</span><br><span class="line">private static final int COUNT_BITS &#x3D; Integer.SIZE - 3;</span><br><span class="line">private static final int CAPACITY   &#x3D; (1 &lt;&lt; COUNT_BITS) - 1;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; runState is stored in the high-order bits</span><br><span class="line">private static final int RUNNING    &#x3D; -1 &lt;&lt; COUNT_BITS;</span><br><span class="line">private static final int SHUTDOWN   &#x3D;  0 &lt;&lt; COUNT_BITS;</span><br><span class="line">private static final int STOP       &#x3D;  1 &lt;&lt; COUNT_BITS;</span><br><span class="line">private static final int TIDYING    &#x3D;  2 &lt;&lt; COUNT_BITS;</span><br><span class="line">private static final int TERMINATED &#x3D;  3 &lt;&lt; COUNT_BITS;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; Packing and unpacking ctl</span><br><span class="line">private static int runStateOf(int c)     &#123; return c &amp; ~CAPACITY; &#125;</span><br><span class="line">private static int workerCountOf(int c)  &#123; return c &amp; CAPACITY; &#125;</span><br><span class="line">private static int ctlOf(int rs, int wc) &#123; return rs | wc; &#125;</span><br><span class="line"></span><br><span class="line">&#x2F;*</span><br><span class="line"> * Bit field accessors that don&#39;t require unpacking ctl.</span><br><span class="line"> * These depend on the bit layout and on workerCount being never negative.</span><br><span class="line"> *&#x2F;</span><br></pre></td></tr></table></figure>
+
+<p>将线程池的代表的状态值使用static和final修饰成为了一个“永不改变的编译时常量”。在这个过程中也不怕被别有用心的人通过某种方式（类似与Java发射）进行修改等。 staitc关键字保证在编译期赋值（static修饰的数据会在类加载过程中分配内存空间且赋值），final保证不会变。<br>类加载的过程：<br><img src="https://img-blog.csdnimg.cn/20200526010038255.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>其中在准备阶段就会将final修饰的数据给赋予真正的值。<br><img src="https://img-blog.csdnimg.cn/20200526010131978.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>3. 如果final修饰的这个数据是一个对象的时候，他这个对象引用是不会改变的，但是对象自身还是可以改变的，java自身是没有提供保证对象不可变的途径如下代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">import lombok.Data;</span><br><span class="line">import lombok.ToString;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * @author yuanxindong</span><br><span class="line"> *&#x2F;</span><br><span class="line">@ToString</span><br><span class="line">@Data</span><br><span class="line">public class FinalUse &#123;</span><br><span class="line">    private String name &#x3D; &quot;yaunxindong&quot;;</span><br><span class="line">    private String gender&#x3D; &quot;N&quot;;</span><br><span class="line">    static final FinalUse finalUse &#x3D;  new FinalUse();</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        System.out.println(&quot;修改前&quot; +finalUse.toString());</span><br><span class="line">        finalUse.setGender(&quot;dog&quot;);</span><br><span class="line">        System.out.println(&quot;修改后&quot;+finalUse.toString());</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行结果：<br>[外链图片转存失败,源站可能有防盗链机制,建议将图片保存下来直接上传(img-iptzY06K-1590425614844)(<a href="http://note.youdao.com/yws/res/13486/9A6FDF832FD34E3085E8CB51C9045F1F)]" target="_blank" rel="noopener">http://note.youdao.com/yws/res/13486/9A6FDF832FD34E3085E8CB51C9045F1F)]</a><br>如果说我们不希望对象也不被改变，那么我们是否直接使用final进行修饰其中内部的属性，在这个时候本分感觉，这样的话我们就可以使用枚举了。<br>4. 使用final 修饰方法中的参数，这样修饰的用意是不让方法内修改这个参数，这个用法之前一直没见过，今天看见同事使用了，使用场景是一个业务埋点工具类。所有入参数被修饰。这样有好处吗？有把，如果另一个人维护代码的时候把埋点数据改掉了。。。。。。YY 不敢确定</p>
+<h4 id="final方法"><a href="#final方法" class="headerlink" title="final方法"></a>final方法</h4><ol>
+<li>使用final将方法锁定以防止任何继承类修改他的含义。这是出于设计的考虑：想要确保在继承中使方法行为保持不变，并且不会被覆盖</li>
+<li>还有就是效率，在过去如果将一个方法指明为final，就是同意编译器将针对该方法的所有调用都转为内嵌调用。（将参数压入栈，跳至方法代码处执行，然后跳回并清理栈中的参数，处理返回值）并且以方法体中的实际代码的副本来代替方法调用。这将消除方法调用的开销。但是就怕但是，hotspot虚拟机中已经优化掉了上面所说的内存消耗问题。所以也不用使用final来进行优化了（我今天就用final修饰了方法）。</li>
+<li>private 修饰的方法，已经隐式指定为final了，但是使用private 修饰的方法仍然可以修饰被final修饰但是没有什么卵用。<h4 id="final类"><a href="#final类" class="headerlink" title="final类"></a>final类</h4></li>
+<li>当某个类的整体被定义为final的时候，就表明了我们不想把这个类被被人使用，他也就不可以被继承。换句话说也就是你对该类的设计就是不需要做任何变动，或出于安全考虑，你不希望他有子类。 </li>
+<li>被final修饰的类的方法也会隐式成为final，但也可以添加final 但是也不会带来任何意义。</li>
+</ol>
+<h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><p>final的作用就是为了更加规范的设计，和更高的效率。正是因为牵扯到了设计和效率，有时他们会产生冲突，我个人觉得在效率方面的是微乎其微，且我们常使用的hotspot已经️对这方面优化了，所以我个人观点就是更偏向设计。</p>
+<h4 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h4><p>在JVM层面final关键字是起了什么作用呢？</p>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/05/26/final%E5%85%B3%E9%94%AE%E5%AD%97%E4%BD%A0%E7%9C%9F%E7%9A%84%E4%BC%9A%E7%94%A8/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-Spring-源码解析-IOC读取xml配置（一）" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/05/25/Spring-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-IOC%E8%AF%BB%E5%8F%96xml%E9%85%8D%E7%BD%AE%EF%BC%88%E4%B8%80%EF%BC%89/">Spring 源码解析 IOC读取xml配置（一）</a>
+    </h1>
+  
+
+        
+        <a href="/2020/05/25/Spring-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-IOC%E8%AF%BB%E5%8F%96xml%E9%85%8D%E7%BD%AE%EF%BC%88%E4%B8%80%EF%BC%89/" class="archive-article-date">
+  	<time datetime="2020-05-24T16:33:10.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-25</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><h4 id="看源码的初衷是什么？"><a href="#看源码的初衷是什么？" class="headerlink" title="看源码的初衷是什么？"></a>看源码的初衷是什么？</h4><ul>
+<li>网上大佬的说法： <em>看源码最大的好处是可以开阔思维，提升架构设计能力。有些东西仅靠书本和自己思考是很难学到的，必须通过看源码，看别人如何设计，然后思考为何这样设计才能领悟到。<br>能力的提高不在于你写了多少代码，做了多少项目，而在于给你一个业务场景时，你是否能拿出几种靠谱的解决方案，并且说出各自的优缺点。而如何才能拿出来，一来靠经验，二来靠归纳总结，而看源码可以快速增加你的经验。</em></li>
+<li>本来还想发表一下自己的看法但是看了大佬的看法确实是这样，为了学习人家的设计思想，编码风格等（==并不是为了记住他的代码Method  name，class name 等==），人家写的代码可是被千千万万个程序员使用过和验证过的。还有就是也是为了我们这些上层比较懒惰且技术不精湛的程序员做了一层抽象和封装吧。是啊，从计算机硬件到我们可以读懂的代码可不都是大佬们呕心沥血的为我们做抽象而得到的。想成为大佬就得学习大佬的代码，都也是成为大佬的必要经历的途径之一。<h3 id="Spring-IOC源码实现"><a href="#Spring-IOC源码实现" class="headerlink" title="Spring IOC源码实现"></a>Spring IOC源码实现</h3><h4 id="什么是IOC？"><a href="#什么是IOC？" class="headerlink" title="什么是IOC？"></a>什么是IOC？</h4></li>
+<li>在wiki百科中是这样介绍IOC的：<em>控制反转（Inversion of Control，缩写为IoC），是面向对象编程中的一种设计原则，可以用来减低计算机代码之间的耦合度。其中最常见的方式叫做依赖注入（Dependency Injection，简称DI），还有一种方式叫“依赖查找”（Dependency Lookup）。通过控制反转，对象在被创建的时候，由一个调控系统内所有对象的外界实体，将其所依赖的对象的引用传递(注入)给它。</em></li>
+<li>个人理解：在平时我们有时会讲到“IOC容器”这个说法对吗？也是对的啊，他只是IOC这个原则中的一个放置bean的容器（其实也就是个Map），IOC也就是控制反转，在起初我们在创建对象的时候是通过new 一个实例来实现的由于这样的方式，很麻烦，每用到一个地方就得创建一个实例，且这种方式对象的创建会很耗费内存（想一下对象的创建过程）。所以大佬们想了一个办法，那就是我创建一个对象然后我把他托管起来，然后有地方有标记用到我就把它给主动注入（此处就是依赖注入（DI）），不用用到的地方去动来获取这个对象。大概思考一下为什么这么最做呢？那就大概是为了性能呗（想一下，我们学的数据结构算法设计模式等都是为了啥，不都是为了写出来的代码耗费空间少，性能好，好维护）。还有就是借用 Spring boot 编程思想的作者小马哥所说：“好莱坞法则，在找演员的时候，你不要来找我我去找你”。这也真的是很形象了。<h3 id="Spring中是如何实现IOC设计原则的？"><a href="#Spring中是如何实现IOC设计原则的？" class="headerlink" title="Spring中是如何实现IOC设计原则的？"></a>Spring中是如何实现IOC设计原则的？</h3><h4 id="1-bean注入到IOC容器中"><a href="#1-bean注入到IOC容器中" class="headerlink" title="1. bean注入到IOC容器中"></a>1. bean注入到IOC容器中</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">package test;</span><br><span class="line"></span><br><span class="line">import Bean.Person;</span><br><span class="line">import org.junit.Test;</span><br><span class="line">import org.springframework.beans.factory.BeanFactory;</span><br><span class="line">import org.springframework.beans.factory.xml.XmlBeanFactory;</span><br><span class="line">import org.springframework.core.io.ClassPathResource;</span><br><span class="line"></span><br><span class="line">import java.util.ArrayList;</span><br><span class="line">import java.util.Collection;</span><br><span class="line">import java.util.HashMap;</span><br><span class="line">import java.util.List;</span><br><span class="line">import java.util.Map;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> *</span><br><span class="line"> * @Author yuanxindong</span><br><span class="line"> *&#x2F;</span><br><span class="line">@SuppressWarnings(&quot;deprecation&quot;)</span><br><span class="line">public class BeanFactoryTest &#123;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * configReader 用于读取并配置文件，读取然后放在内存中</span><br><span class="line">     * ReflectionUtil 用于配置文件中的配置进行反射是列化</span><br><span class="line">     * App 用于整个逻辑的串联</span><br><span class="line">     *&#x2F;</span><br><span class="line">    @Test</span><br><span class="line">    public  void testSimpleLoad()&#123;</span><br><span class="line">        BeanFactory bf  &#x3D; new XmlBeanFactory(new ClassPathResource(&quot;bean.xml&quot;));</span><br><span class="line">        Person bean  &#x3D; (Person)bf.getBean(&quot;Person&quot;);</span><br><span class="line">        System.out.println(&quot;bean&quot;+ bean.toString());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+配置文件xml </li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">&lt;?xml version&#x3D;&quot;1.0&quot; encoding&#x3D;&quot;UTF-8&quot;?&gt;</span><br><span class="line">&lt;beans xmlns&#x3D;&quot;http:&#x2F;&#x2F;www.springframework.org&#x2F;schema&#x2F;beans&quot;</span><br><span class="line">       xmlns:xsi&#x3D;&quot;http:&#x2F;&#x2F;www.w3.org&#x2F;2001&#x2F;XMLSchema-instance&quot;</span><br><span class="line">       xsi:schemaLocation&#x3D;&quot;http:&#x2F;&#x2F;www.springframework.org&#x2F;schema&#x2F;beans</span><br><span class="line">                        http:&#x2F;&#x2F;www.springframework.org&#x2F;schema&#x2F;beans&#x2F;spring-beans.xsd&quot;&gt;</span><br><span class="line">    &lt;bean id &#x3D; &quot;Person&quot; class &#x3D; &quot;Bean.Person&quot;&gt;</span><br><span class="line">        &lt;constructor-arg index&#x3D;&quot;0&quot; value&#x3D;&quot;1&quot;&#x2F;&gt;</span><br><span class="line">        &lt;constructor-arg index&#x3D;&quot;1&quot; value&#x3D;&quot;2&quot;&#x2F;&gt;</span><br><span class="line">    &lt;&#x2F;bean&gt;</span><br><span class="line"></span><br><span class="line">&lt;&#x2F;beans&gt;</span><br></pre></td></tr></table></figure>
+<p>Person实例需要注入的bean</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">package Bean;</span><br><span class="line"></span><br><span class="line">import lombok.Data;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * @Author yuanxibndong</span><br><span class="line"> *&#x2F;</span><br><span class="line">@Data</span><br><span class="line">public class Person &#123;</span><br><span class="line">    private String name;</span><br><span class="line">    private Integer age;</span><br><span class="line">    private String gender;</span><br><span class="line"></span><br><span class="line">    public Person(String name, int age) &#123;</span><br><span class="line">        this.name &#x3D; name;</span><br><span class="line">        this.age &#x3D; age;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<ul>
+<li>通过上面的代码我们可以看出来首先通过xml文件读取配置<ol>
+<li>通过classPathResource进行封装。在java中将不同的来源抽象为URL，URL有没有基本的方法，所以载spring中会用到一些基本方法所以就做了一层抽象结构：Resource结构</li>
+<li></li>
+</ol>
+</li>
+<li>从中我们可以看到很很多基础方法 明天继续》》》》》》》》》》</li>
+</ul>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/05/25/Spring-%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-IOC%E8%AF%BB%E5%8F%96xml%E9%85%8D%E7%BD%AE%EF%BC%88%E4%B8%80%EF%BC%89/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-spring-state-machine" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/05/23/spring-state-machine/">spring state machine</a>
+    </h1>
+  
+
+        
+        <a href="/2020/05/23/spring-state-machine/" class="archive-article-date">
+  	<time datetime="2020-05-23T09:45:32.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-23</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="简单入门"><a href="#简单入门" class="headerlink" title="简单入门"></a>简单入门</h1><h2 id="简单状态机（状态无层次结构，不存在子状态）"><a href="#简单状态机（状态无层次结构，不存在子状态）" class="headerlink" title="简单状态机（状态无层次结构，不存在子状态）"></a>简单状态机（状态无层次结构，不存在子状态）</h2><p>Turnstile是一个简单的设备，如果付款完成，您可以访问该设备，并且使用状态机进行建模非常简单。 最简单的形式是只有两个状态，LOCKED和UNLOCKED。 如果您尝试通过它或您付款，可能会发生两个事件，COIN和PUSH。</p>
+<p><img src="https://docs.spring.io/spring-statemachine/docs/1.2.8.RELEASE/reference/htmlsingle/images/statechart1.png" alt="Turnstile"></p>
+<p><strong>状态</strong></p>
+<pre><code>public enum States {
+    LOCKED, UNLOCKED
+}</code></pre><p><strong>事件</strong> </p>
+<pre><code>public enum Events {
+    COIN, PUSH
+}</code></pre><p><strong>状态机配置</strong></p>
+<pre><code>@Configuration
+@EnableStateMachine
+static class StateMachineConfig
+        extends EnumStateMachineConfigurerAdapter&lt;States, Events&gt; {
+
+    @Override
+    public void configure(StateMachineStateConfigurer&lt;States, Events&gt; states)
+            throws Exception {
+        states
+            .withStates()
+                .initial(States.LOCKED)   //配置初始状态
+                .states(EnumSet.allOf(States.class)); //导入所有状态
+    }
+
+    @Override
+    public void configure(StateMachineTransitionConfigurer&lt;States, Events&gt; transitions)
+            throws Exception {
+        transitions            //配置transition
+            .withExternal()   
+                .source(States.LOCKED)    //当接收到COIN事件
+                .target(States.UNLOCKED)  //LOCKED--&gt; UNLOCKED
+                .event(Events.COIN)
+                .and()
+            .withExternal()
+                .source(States.UNLOCKED) //当接收到PUSH事件
+                .target(States.LOCKED)   //UNLOCKED--&gt; LOCKED
+                .event(Events.PUSH);
+        }
+
+}</code></pre><h2 id="多层次状态机"><a href="#多层次状态机" class="headerlink" title="多层次状态机"></a>多层次状态机</h2><p>Showcase是一个复杂的状态机，显示所有可能的转换拓扑结构，最多可达四级状态嵌套。<br><img src="https://docs.spring.io/spring-statemachine/docs/1.2.8.RELEASE/reference/htmlsingle/images/statechart2.png" alt="Showcase"></p>
+<p><strong>状态</strong> </p>
+<pre><code>public enum States {
+    S0, S1, S11, S12, S2, S21, S211, S212
+}</code></pre><p><strong>事件</strong> </p>
+<pre><code>public enum Events {
+    A, B, C, D, E, F, G, H, I
+}</code></pre><p><strong>状态机配置</strong><br>状态关系</p>
+<pre><code>@Override
+public void configure(StateMachineStateConfigurer&lt;States, Events&gt; states)
+        throws Exception {
+    states
+        .withStates()
+            .initial(States.S0, fooAction())   //初始化状态，初始化动作
+            .state(States.S0)                   //导入状态
+            .and()
+            .withStates()                      //配置S0的子状态S1  
+                .parent(States.S0)         
+                .initial(States.S1)
+                .state(States.S1)
+                .and()
+                .withStates()                     //配置S1的子状态S11、S12
+                    .parent(States.S1)       
+                    .initial(States.S11)
+                    .state(States.S11)
+                    .state(States.S12)
+                    .and()
+            .withStates()                      //配置S0的子状态S2  
+                .parent(States.S0)
+                .state(States.S2)
+                .and()
+                .withStates()                  //配置S2的子状态S21、S22
+                    .parent(States.S2)
+                    .initial(States.S21)
+                    .state(States.S21)
+                    .and()
+                    .withStates()              //配置S21的子状态S211、S212
+                        .parent(States.S21)
+                        .initial(States.S211)
+                        .state(States.S211)
+                        .state(States.S212);
+    }</code></pre><p>状态转移关系</p>
+<pre><code>@Override
+public void configure(StateMachineTransitionConfigurer&lt;States, Events&gt; transitions)
+    throws Exception {
+        transitions
+            .withExternal()            
+                .source(States.S1).target(States.S1).event(Events.A)    //A：S1-&gt;S1
+                .guard(foo1Guard())                                     //配置guard
+                .and()
+            .withExternal()
+                .source(States.S1).target(States.S11).event(Events.B)   //B:S1-&gt;S11
+                .and()
+            .withExternal()
+                .source(States.S21).target(States.S211).event(Events.B) //B:S21-&gt;S211
+                .and()
+            .withExternal()
+                .source(States.S1).target(States.S2).event(Events.C)    //C:S1-&gt;S2
+                .and()
+            .withExternal()
+                .source(States.S2).target(States.S1).event(Events.C)    //C:S2-&gt;S1
+                .and()
+            .withExternal()
+                .source(States.S1).target(States.S0).event(Events.D)    //D:S1-&gt;S0
+                .and()
+            .withExternal()
+                .source(States.S211).target(States.S21).event(Events.D) //D:S211-&gt;S21
+                .and()
+            .withExternal()
+                .source(States.S0).target(States.S211).event(Events.E)  //E:S0-&gt;S211
+                .and()
+            .withExternal()
+                .source(States.S1).target(States.S211).event(Events.F)  //F:S1-&gt;S211
+                .and()
+            .withExternal()
+                .source(States.S2).target(States.S11).event(Events.F)   //F:S2-&gt;S11
+                .and()
+            .withExternal()
+                .source(States.S11).target(States.S211).event(Events.G) //G:S11-&gt;S211
+                .and()
+            .withExternal()
+                .source(States.S211).target(States.S0).event(Events.G)  //G:S211-&gt;S0
+                .and()
+            .withInternal()                                                //内部转移，无状态变化 
+                .source(States.S0).event(Events.H)
+                .guard(foo0Guard())
+                .action(fooAction())
+                .and()    
+            .withInternal()                                                //内部转移，无状态变化 
+                .source(States.S2).event(Events.H)
+                .guard(foo1Guard())
+                .action(fooAction())
+                .and()
+            .withInternal()                                             //内部转移，无状态变化    
+                .source(States.S1).event(Events.H)
+                .and()
+            .withExternal()                                             //I:S11-&gt;S12 
+                .source(States.S11).target(States.S12).event(Events.I)
+                .and()
+            .withExternal()                                             //I:S211-&gt;S212
+                .source(States.S211).target(States.S212).event(Events.I)
+                .and()
+            .withExternal()                                             //I:S12-&gt;S212
+                .source(States.S12).target(States.S212).event(Events.I);
+    }</code></pre><p><strong>action&amp;guard</strong></p>
+<pre><code>@Bean
+public FooGuard foo0Guard() {
+    return new FooGuard(0);
+}
+
+@Bean
+public FooGuard foo1Guard() {
+    return new FooGuard(1);
+}
+
+@Bean
+public FooAction fooAction() {
+    return new FooAction();
+}
+
+private static class FooAction implements Action&lt;States, Events&gt; {
+
+    @Override
+    public void execute(StateContext&lt;States, Events&gt; context) {
+        Map&lt;Object, Object&gt; variables = context.getExtendedState().getVariables();
+        Integer foo = context.getExtendedState().get(&quot;foo&quot;, Integer.class);
+        if (foo == null) {
+            log.info(&quot;Init foo to 0&quot;);
+            variables.put(&quot;foo&quot;, 0);
+        } else if (foo == 0) {
+            log.info(&quot;Switch foo to 1&quot;);
+            variables.put(&quot;foo&quot;, 1);
+        } else if (foo == 1) {
+            log.info(&quot;Switch foo to 0&quot;);
+            variables.put(&quot;foo&quot;, 0);
+        }
+    }
+}
+
+
+private static class FooGuard implements Guard&lt;States, Events&gt; {
+
+    private final int match;
+
+    public FooGuard(int match) {
+        this.match = match;
+    }
+
+    @Override
+    public boolean evaluate(StateContext&lt;States, Events&gt; context) {
+        Object foo = context.getExtendedState().getVariables().get(&quot;foo&quot;);
+        return !(foo == null || !foo.equals(match));
+    }
+}</code></pre>
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/05/23/spring-state-machine/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-mongoDB白皮书" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/05/21/mongoDB%E7%99%BD%E7%9A%AE%E4%B9%A6/">mongoDB白皮书</a>
+    </h1>
+  
+
+        
+        <a href="/2020/05/21/mongoDB%E7%99%BD%E7%9A%AE%E4%B9%A6/" class="archive-article-date">
+  	<time datetime="2020-05-21T05:14:01.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-21</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        
+
+	<div class="row">
+    <embed src="https://webassets.mongodb.com/mongodb-architecture-guide-overview_cn.pdf" width="100%" height="550" type="application/pdf">
+	</div>
+
+
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/05/21/mongoDB%E7%99%BD%E7%9A%AE%E4%B9%A6/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-520初始MongoDB" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/05/21/520%E5%88%9D%E5%A7%8BMongoDB/">520初始MongoDB</a>
+    </h1>
+  
+
+        
+        <a href="/2020/05/21/520%E5%88%9D%E5%A7%8BMongoDB/" class="archive-article-date">
+  	<time datetime="2020-05-20T18:08:42.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-21</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p> 由于我们在开发的过程中难免会遇到数据库选型的问题，那么数据库的选型那我们必须通过结合我们的业务场景还有他们的设计初衷，及各自在各个方面的优势。现在我们就在业务开发中遇到了选择 mongoDB还时MYsql。之前没有怎么了解过mongoDB，那今天就开始我的mongoDB第一步。</p>
+<h2 id="设计的初衷"><a href="#设计的初衷" class="headerlink" title="设计的初衷"></a>设计的初衷</h2><p>建立一种灵活，高效，易于扩展，功能完备的数据库。</p>
+<h2 id="1-丰富的数据模型"><a href="#1-丰富的数据模型" class="headerlink" title="1. 丰富的数据模型"></a>1. 丰富的数据模型</h2><ul>
+<li>mongo是面向文档的数据库，为了获得更好的扩展性采用的不是关系型数据库，使用一条记录就可以表示非常复杂的层次关系</li>
+<li>没有固定的模式，文档的键值可以在应用层进行自己处理<h2 id="2-容易扩展"><a href="#2-容易扩展" class="headerlink" title="2. 容易扩展"></a>2. 容易扩展</h2></li>
+<li>由于大数据时代的来临，开发者遇到的问题就是如何扩展数据库。一般的关系性数据库做拓展最简单的方式也就是分库分表等，但是mongo采用的是文档模式可以自动在多台服务器间进行分割数据。还可以自动平衡负载和自动重排文档等<h2 id="3-丰富的功能"><a href="#3-丰富的功能" class="headerlink" title="3. 丰富的功能"></a>3. 丰富的功能</h2></li>
+<li>索引<br>  1.拥有铺筑索引，能进行多种快速查询，也提供唯一的，复合的和地理空间索引能力</li>
+<li>存储JavaScript</li>
+<li>聚合 MapReduce和其他聚合工具</li>
+<li>固定集合 集合的大小是有上限的</li>
+<li>文件存储 存储大型文件和文件元数据<br>但是也有关系数据库中的功能不具备，那就是join查询，和多行事物。mongo的架构是为了提高性能和扩展性，但是这两个功能很难在一个分布式系统上实现。<h2 id="4-不牺牲速度"><a href="#4-不牺牲速度" class="headerlink" title="4. 不牺牲速度"></a>4. 不牺牲速度</h2>mongo的主要目标是卓越的性能，使用的传输协议是自己的传输协议作为服务器间交互的主要方式，他对文档进行动态填充，将内存管理工作交给操作系统去处理动态查询优化器会记住执行查询最高效的方式，也将类似于关系型数据库中的一部分业务交给了客户端去处理。<h2 id="5-简便的管理"><a href="#5-简便的管理" class="headerlink" title="5.简便的管理"></a>5.简便的管理</h2>MonogDB尽量让服务器自治来简化数据库的管理。除了启动就再也没有什，么需要管理的地方了。如果有节点挂掉，mongo会自动去切换到从节点的机器上。 mongo的管理理念是尽可能的让服务器进行自动配置，让用户在需要时候调整设置。<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2>所有新事物的产生，都会有产生的原因，mongo也不列外，硬件水平提升，大数据时代的到来，关系型数据库出现暴露出了自己的性能瓶颈，如：全文检索导致数据响应时间慢，数据模型的固定导致业务修改成本高等等。mongo通过牺牲关系型数据库中部分功能（事物，join关联）来提高数据库的灵活性和高效性。及支持自动分区，提高数据库的扩展性</li>
+</ul>
+<h2 id="想一下和mysql关系型数据库的区别？-mysql的优势是什么呢？"><a href="#想一下和mysql关系型数据库的区别？-mysql的优势是什么呢？" class="headerlink" title="想一下和mysql关系型数据库的区别？ mysql的优势是什么呢？"></a>想一下和mysql关系型数据库的区别？ mysql的优势是什么呢？</h2>
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2020/05/21/520%E5%88%9D%E5%A7%8BMongoDB/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-复盘" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2020/05/19/%E5%A4%8D%E7%9B%98/">复盘</a>
+    </h1>
+  
+
+        
+        <a href="/2020/05/19/%E5%A4%8D%E7%9B%98/" class="archive-article-date">
+  	<time datetime="2020-05-18T16:03:01.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-19</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <ol>
+<li><p>你所毕业的学校真的对于你来很重要。</p>
+<ul>
+<li>第一件事： 那天中午，有一个今年就要毕业的实习生，很兴奋的跑过来跟我说：“X哥，我现在接受X业务模块了，听G哥说，你熟悉这块逻辑，以后还得多问问你。”。不得不说我挺替这位实习生高兴的。我说好啊，有问题你过来问我就行。然后过了有半个星期。我和那个实习生的师傅吃饭，我说怎么不见实习生了。他说：“被HR劝退了！”。我当时挺疑问的：“这娃挺上进的，怎么就不要了呢？”。他师傅说：“学校不行，今年就业形式不行，公司现在招985，211的哪些！”。</li>
+</ul>
+</li>
+<li><p>每一件事情对于你来说都很重要</p>
+</li>
+</ol>
+<ul>
+<li>第二件事： 公司组织业务考试，考试系统有bug，大家都是搞研发的，一不说二不休的直接把答案都搞出来了。最后大部分都考了高分。因为有满分且做的很快，于是高层领导怀疑有人作弊。组织让高分进行了重考，极少数人重视了第二次考试考过了，大部分人没有重视随意一答就出了考场。于是公司在没考过的人里面追查了下来。大部分人降职降薪。 到最后谁也没想到会有这么严重的结果。</li>
+</ul>
+<p>这两件事情虽然我都幸免于难。但对我的感触颇为深厚。就当是今天通过这两件事情复盘一下自己。 </p>
+<p>从去年大学毕业都很顺利，一直到现在都还好，没有遇到什么大的困难和坎坷。也学到了很多东西，也养成了一些好的习惯。 </p>
+<p>但是针对于上面的两件事情，我都不够好，第一件我不是什么名校，但这只能怪以前的自己不够优秀，不够好。不能责怪现在的自己，一切问题都会有办法来解决。 那就是现在的自己弥补以前自己的缺失。不晚，一点也不晚。只要能静下心来，能够用心，这都是可以弥补过来的。就比如定个目标，让自己去一个可以“镀金”的公司。不断的去学习，提高自己的认知，提高自己的知识储备。到目前来看我有做到第一步不断提高自己的知识储备。但是还是不能够静下心来（效率不够高），目标还不是很明确，还有就是不够自信。再次在这里劝诫自己多出去“实战，实战”。</p>
+<p>第二件事情对于我来说，完全是幸运，因为我当时也有“抄袭”，大概是没有抄好，到最后没有考到很高分。甚至我在考完得到分数感觉有一些懊悔（这他妈才考了这么点）。我完全没有重视这场考试，没有预习也没有复习。甚至“抄袭也没有抄好”。这就是问题。仔细想想以前的很多的小的问题我都没有做好，甚至到今天突然想到leader安排的一个指标监控还没有做好（有些时间了）。这就是问题吧。不得不承认我是一个邋遢的人。甚至可以说在平日里计划都不很明确的人。不是一个细心的人。大概是这样。没有计划，就会遗漏。再想想我真的做的很差在这方面。 这就是我的短板之一，写到这里还算是明确了。是的有短板就需要刻意练习。再扯回“对每件事都要重视”这件事情上，就说事我重视了这件事情，还有就是踏踏实实的自己干，那我完全不用浪费我的运气了。我会顺顺当当的过关。这又映射出另一件事情：“那就是踏踏实实做自己”。大概就是这样。写到这里也算明确了和正确理解了这两件事情。</p>
+<p>总结一下：</p>
 <ol>
-<li>首先我们使用jps命令查看当前运行在JVM上的应用的LVMID也就是我上图的28398</li>
-<li>拿到这个后使用jmap -dump命令<br><img src="https://img-blog.csdnimg.cn/20200422190200219.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">jmap -dump:format&#x3D;b,file&#x3D;dumpHeap.bin 28398</span><br></pre></td></tr></table></figure></li>
-<li>执行成功后使用ll就可以看到dump 下来的文件</li>
-<li>接下来我们可以使用其他的分析工具进行分析 如：jhat ，Visual VM，MAT等。周志明说：能用其他工具就不要用jhat原因是：一般不会在部署应用的服务器上进行分析dump文件，分析dump文件是一件非常耗费硬件资源的过程，第二个原因就是jhat很简陋。所以还是使用将多个功能放在一块的工具Visual VM来进行分析。</li>
+<li>继续加油持续充电，明确目标不断前进。</li>
+<li>计划明确细心静心，脚踏实地弥补短板。</li>
 </ol>
-<p>Tips : 但是这个dump在生产环境中还是慎用，因为在dump文件的过程中为保证文件的准确性会停止所有的进程的（个人觉得有点类似于gc 中的stop the word）</p>
-<h3 id="jstat-实战"><a href="#jstat-实战" class="headerlink" title="jstat 实战"></a>jstat 实战</h3><p><img src="https://img-blog.csdnimg.cn/20200422190253806.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-<ol>
-<li>jps获取服务的LVMID</li>
-<li>jstat -gc </li>
-<li>我们从图中可以观察到 其中 S0 和 S1 指 Survivor0 区和 Survivor1区，E 即 Eden 区，O 指老年代，M 指 MetaSpace，元数据空间，CCS 是压缩使用比例，YGC：年轻代垃圾回收次数，FGC：老年代垃圾回收次数，FGCT：老年代垃圾回收消耗时间，GCT：垃圾回收消耗总时间。当我们拿到了生产上的信息，且进行了分析，那我们就得查看现有的配置。那就是用jinfo <h3 id="jinfo实战"><a href="#jinfo实战" class="headerlink" title="jinfo实战"></a>jinfo实战</h3><img src="https://img-blog.csdnimg.cn/20200422190310978.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="\[外链图片转存失败,源站可能有防盗链机制,建议将图片保存下来直接上传(img-88RzgrlE-1587553128999)(194849B176BF4920A366E5317A6EE32A)\]"></li>
-<li>不管怎样我们都得查找到LVMID</li>
-<li>通过jinfo查看得到该应用程序的现有配置。</li>
-<li>或者说我们使用的jekins自动化构建工具那我们可以在</li>
-</ol>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cd &#x2F;usr&#x2F;local&#x2F;deploy&#x2F;supervisord&#x2F;conf&#x2F;项目对应的conf文件</span><br></pre></td></tr></table></figure>
-<ol start="4">
-<li>cat 文件进行查看 应用的启动配置的配置文件。<h3 id="其实不是不可以使用jmap而是jmap-dump的使用的时候需要注意。有可能会导致服务停止！！"><a href="#其实不是不可以使用jmap而是jmap-dump的使用的时候需要注意。有可能会导致服务停止！！" class="headerlink" title="其实不是不可以使用jmap而是jmap -dump的使用的时候需要注意。有可能会导致服务停止！！"></a>其实不是不可以使用jmap而是jmap -dump的使用的时候需要注意。有可能会导致服务停止！！</h3></li>
-</ol>
+<ul>
+<li>共勉！！！<br>我感觉我适合做一个Rapper</li>
+</ul>
 
       
 
@@ -203,7 +860,7 @@
 
       
         <p class="article-more-link">
-          <a class="article-more-a" href="/2020/05/17/JVM%E7%BA%BF%E4%B8%8A%E5%86%85%E5%AD%98%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5/">展开全文 >></a>
+          <a class="article-more-a" href="/2020/05/19/%E5%A4%8D%E7%9B%98/">展开全文 >></a>
         </p>
       
 
@@ -233,52 +890,29 @@
 
 
   
-    <article id="post-请分清楚Java内存区域和Java内存模型" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+    <article id="post-spring-aop的实现原理" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2020/05/17/%E8%AF%B7%E5%88%86%E6%B8%85%E6%A5%9AJava%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E5%92%8CJava%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/">请分清楚Java内存区域和Java内存模型</a>
+      <a class="article-title" href="/2020/05/18/spring-aop%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/">spring aop的实现原理</a>
     </h1>
   
 
         
-        <a href="/2020/05/17/%E8%AF%B7%E5%88%86%E6%B8%85%E6%A5%9AJava%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E5%92%8CJava%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="archive-article-date">
-  	<time datetime="2020-05-16T17:14:49.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-17</time>
+        <a href="/2020/05/18/spring-aop%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/" class="archive-article-date">
+  	<time datetime="2020-05-18T01:16:43.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-18</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <p><strong>java内存区域是java虚拟机在执行java程序的时候会把它所管理的内存进行划分不同的数据区域</strong>。<br><strong>但是java内存模型是为了屏蔽各种硬件和操作系统的内存访问的差异，已实现java程序在不同的操作系统中都能达到一致的访问效果</strong></p>
-<h2 id="Java内存区域"><a href="#Java内存区域" class="headerlink" title="Java内存区域"></a>Java内存区域</h2><p><strong>1. 线程共享区</strong>：</p>
-<ul>
-<li>堆：堆可分为eden区和survior to和survior from 区 刚创建的对象，且堆内存够放下这个对象，都会放在eden区。</li>
-<li>方法区： 存储已经被加载的类信息，常量，静态变量，即时编译后的代码等数据。在hotspot虚拟机中方法区也被称为老年代。</li>
-</ul>
-<p><strong>2. 线程独享区</strong></p>
-<ul>
-<li>Java虚拟机栈：在我们代码在运行是调用一个方法就会创建一个栈帧用于存储局部变量表，动态链接，操作数栈，方法出口等。调用方法的过程也就是压栈和弹栈的过程，栈的数据结构是先进后出的我们可以想一下主方法调用其他方法，其他方法调用完成那其他的方法就弹栈了谈完后其以及已经将动态链接的数据已经改变，于是你的主方法内的数据也随即改变。仔细品品。</li>
-<li>本地方发栈： 本地方法栈和Java虚拟机栈的作用类似，Java虚拟机栈是为java方法的使用而执行的，但是本地方法栈是为了Java虚拟机调用的native方法执行的。正是因为本地方法栈不会限制使用的语言，使用的方法还有数据结构。</li>
-<li>程序计数器：粗糙一点也就是为了记录代码执行到那一块了。还有就是我们在执行多线程的时候，在虚拟机中并不是所谓的同步执行的，而是通过线程的切换并分配处理器的时间的方式来实现的，所以在切换的过程中有的线程执行了一半，又切换到了其他线程那就得将其字节码指令执行到那一块就得记录下来，这也是程序计数器为什么是私有的原因。</li>
-</ul>
-<p><strong>3. 直接内存</strong>（非Java虚拟机中运行时动态区域，但是也会引起OOM）<br><img src="https://img-blog.csdnimg.cn/20200504003454150.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="\[外链图片转存失败,源站可能有防盗链机制,建议将图片保存下来直接上传(img-MSDffKes-1588523651379)(47A49CD3238948398729B5DD70C4D87F)\]"></p>
-<ul>
-<li>直接内存并不属于JVM动态运行时区域，我们在使用NIO的时候基于通道与缓冲区的方式（buffer）的I/O的方式，他可以使用native函数库直接分配堆外内存 ，然后通过存储在Java堆种的dirctyByteBuffer对象作为这块堆内存的一面用进行操作。<h2 id="java内存模型"><a href="#java内存模型" class="headerlink" title="java内存模型"></a>java内存模型</h2></li>
-</ul>
-<ol>
-<li>Java的内存模型重要的目标是定义程序中的各个变量的访问规则。即在虚拟机中将变量存储到内存和从内存中取出变量这样的底层细节。此处变量只是针对全局变量和静态字段，和构成数组的对象元素。</li>
-<li>Java的内存模型分为 主内存，工作内存。</li>
+        <ol>
+<li>Spring 框架启动的裹层呢</li>
 </ol>
-<ul>
-<li>工作内存：每一个线程都拥有自己的工作内存，工作内存保存的是从主内存复制拷贝过来的副本,不同的线程之间是不可以直接进行工作内存的访问，必须通过主内存作为中间人才可以访问。</li>
-<li>主内存：主内存就用来存放所有的公共变量。线程间可以共享的变量。</li>
-<li>Java内存模型和Java运行时动态内存模型类比的话，那么主内存就是其Java堆中的那些对象实例，而工作内存区域就是Java虚拟机栈中的局部变量表还有refrence所指向的数据，还有方法参数等。<br><img src="https://img-blog.csdnimg.cn/20200504003626339.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><h3 id="思考一下"><a href="#思考一下" class="headerlink" title="思考一下"></a>思考一下</h3></li>
-</ul>
-<p><strong>volatile关键字是如何达到变量在各个线程间是可见的呢？</strong></p>
 
       
 
@@ -291,7 +925,7 @@
 
       
         <p class="article-more-link">
-          <a class="article-more-a" href="/2020/05/17/%E8%AF%B7%E5%88%86%E6%B8%85%E6%A5%9AJava%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9F%E5%92%8CJava%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/">展开全文 >></a>
+          <a class="article-more-a" href="/2020/05/18/spring-aop%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86/">展开全文 >></a>
         </p>
       
 
@@ -321,45 +955,53 @@
 
 
   
-    <article id="post-微观经济学和宏观经济学" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+    <article id="post-以正确姿势理解区块链技术？" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2020/05/17/%E5%BE%AE%E8%A7%82%E7%BB%8F%E6%B5%8E%E5%AD%A6%E5%92%8C%E5%AE%8F%E8%A7%82%E7%BB%8F%E6%B5%8E%E5%AD%A6/">微观经济学和宏观经济学</a>
+      <a class="article-title" href="/2020/05/17/%E4%BB%A5%E6%AD%A3%E7%A1%AE%E5%A7%BF%E5%8A%BF%E7%90%86%E8%A7%A3%E5%8C%BA%E5%9D%97%E9%93%BE%E6%8A%80%E6%9C%AF%EF%BC%9F/">以正确姿势理解区块链技术？</a>
     </h1>
   
 
         
-        <a href="/2020/05/17/%E5%BE%AE%E8%A7%82%E7%BB%8F%E6%B5%8E%E5%AD%A6%E5%92%8C%E5%AE%8F%E8%A7%82%E7%BB%8F%E6%B5%8E%E5%AD%A6/" class="archive-article-date">
-  	<time datetime="2020-05-16T17:13:36.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-17</time>
+        <a href="/2020/05/17/%E4%BB%A5%E6%AD%A3%E7%A1%AE%E5%A7%BF%E5%8A%BF%E7%90%86%E8%A7%A3%E5%8C%BA%E5%9D%97%E9%93%BE%E6%8A%80%E6%9C%AF%EF%BC%9F/" class="archive-article-date">
+  	<time datetime="2020-05-17T05:20:13.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-17</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h3 id="什么是微观经济学？"><a href="#什么是微观经济学？" class="headerlink" title="什么是微观经济学？"></a>什么是微观经济学？</h3><p> 微观经济学又称个体经济学，小经济学，是宏观经济学的对称。微观经济学主要以单个经济单位(单个的生产者、单个的消费者、单个市场的经济活动)作为研究对象，分析单个生产者如何将有限的资源分配在各种商品的生产上以取得最大的利润；单个消费者如何将有限的收入分配在各种商品的消费上以获得最大的满足。同时，</p>
-<p> 微观经济学还分析==单个生产者的产量、成本、使用的生产要素数量和利润如何确定==；生产要素供应者的收入如何决定；单个商品的效用、供给量、需求量和价格如何确定等等。</p>
-<p>　　微观经济学 ——分析个体经济单位的经济行为,在此基础上,研究现代西方经济社会的市场机制运行及其在经济资源配置中的作用,并提出微观经济政策以纠正市场失灵。</p>
-<p>　　微观经济学关心社会中的个人和各组织之间的交换过程，它研究的基本问题是资源配置的决定，其基本理论就是通过供求来决定相对价格的理论。所以微观经济学的主要范围包括消费者选择，厂商进行的供给和收入分配。</p>
-<p>　　微观”是希腊文“ μικρο ”的意译，原意是“小”。微观经济学是研究社会中单个经济单位的经济行为，以及相应的经济变量的单项数值如何决定的经济学说。亦称市场经济学或价格理论。微观经济学的中心理论是价格理论。微观经济学的一个中心思想是，自由交换往往使资源得到最充分的利用，在这种情况下，资源配置被认为是帕累托（Pareto） 有效的。<br>　  总结一下：通俗来讲微观经济学就是研究让一个个体或者一个组织来的利益最大化。将其现有资源最大化使用。也就是我们接下来要说的：</p>
-<h3 id="微观经济学的研究方向"><a href="#微观经济学的研究方向" class="headerlink" title="微观经济学的研究方向"></a>微观经济学的研究方向</h3><ul>
-<li>微观经济学研究市场中个体的经济行为，亦即单个家庭、单个厂商和单个市场的经济行为以及相应的经济变量数值的决定。</li>
-<li>==它从资源稀缺这个基本概念出发，认为所有个体的行为准则在于设法利用有限的资源取得最大的收获，并由此来考察个体取得最大收获的条件==。（感觉很适合目前“资源稀缺”的我）</li>
-<li>在商品与劳务市场上，作为消费者的家庭根据各种商品的不同价格进行选择，==设法用有限的收入从所购买的各种商品量中获得最大的效用或满足==（这也就是我们平时所说的性价比，让你所买的东西性价比达到最高）。家庭选择商品的行动必然会影响商品的价格，市场价格的变动又是厂商确定生产何种商品的信号。</li>
-<li>厂商是各种商品及劳务的供给者，厂商的目的则在于如何用最小的生产成本，生产出最大的产品量，获得取最大限度的利润。厂商的抉择又将影响到生产要素市场上的各项价格，从而影响到家庭的收入。家庭和厂商的抉择均通过市场上的供求关系表现出来，通过价格变动进行协调。因此，微观经济学的任务就是研究==市场机制及其作用，均衡价格的决定，考察市场机制如何通过调节个体行为取得资源最优配置的条件与途径==。微观经济学也就是关于市场机制的经济学，它以价格为分析的中心，因此也称作价格理论。</li>
-<li>微观经济学还考察了市场机制失灵时，政府如何采取干预行为与措施的理论基础（就在最近疫情，政府的贷款利率降低，向民众发放优惠券等）。</li>
-<li>微观经济学是马歇尔的均衡价格理论基础上，吸收美国经济学家张伯仑和英国经济学家罗宾逊的垄断竞争理论以及其他理论后逐步建立起来的。凯恩斯主义的宏观经济学盛行之后，这种着重研究个体经济行为的传统理论，就被称为微观经济学。<h3 id="微观经济学与宏观经济学的区别"><a href="#微观经济学与宏观经济学的区别" class="headerlink" title="微观经济学与宏观经济学的区别"></a>微观经济学与宏观经济学的区别</h3></li>
-<li>了解了微观经济学后，那宏观经济学呢？（已经明确：主要还是学习微观经济学）</li>
+        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>今天在看了一个视频《全球区块链全球生态技术大会》中的腾讯云通过区块链技术实现了一个针对于企业服务的Tbaas区块链基础服务平台。（视频地址:<a href="https://note.youdao.com/" target="_blank" rel="noopener">https://time.geekbang.org/dailylesson/detail/100016514</a>），之前因比特币看过区块链这方面的技术，大概了解了一下区块链技术的中心思想。今天看一下我们目前区块链技术的落地方案。</p>
+<h3 id="什么是区块链技术？"><a href="#什么是区块链技术？" class="headerlink" title="什么是区块链技术？"></a>什么是区块链技术？</h3><h4 id="权威指南"><a href="#权威指南" class="headerlink" title="权威指南"></a>权威指南</h4><p>wiki百科：<em>区块链（英语：blockchain[1][2][3]或block chain[4][5]）是借由密码学[1][6]串接并保护内容的串连文字记录（又称区块）。<br>每一个区块包含了前一个区块的加密散列、相应时间戳记以及交易数据（通常用默克尔树(Merkle tree)算法计算的散列值表示）[7]，这样的设计使得区块内容具有难以篡改的特性。用区块链技术所串接的分布式账本能让两方有效纪录交易，且可永久查验此交易。</em></p>
+<h3 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h3><p>区块链技术的目的是实现去中心化（弱中心化），为什么去中心化。因为去了中心化就不用某一个中心化用户来维护这份“账本数据”，可以动员所有的用户去维护这个账本（或联盟成员），这样可以让账本数据更加的透明化（可信任）。这些用户可以通过POW算法（分布式一致性算法）去维护这个帐本。这个账本之间都是依次相互联系的，通过加密算法进行账本间的相互依赖也就是可溯源。</p>
+<p>我们再想想，比特币的初衷是去中心化，不再再去受某个机构或某个团体的监管，而区块链技术就是从其中分离出来的技术实现。所以区块链技术也就是去中心化（弱中心化）在去中心（弱中心化）的同时且能保证数据和系统的安全且遵循分布式系统的CAP理论。</p>
+<h3 id="区块链7个特征"><a href="#区块链7个特征" class="headerlink" title="区块链7个特征"></a>区块链7个特征</h3><ol>
+<li>区块链的存储基于分布式数据库；</li>
+<li>数据库是区块链的数据载体，区块链是交易的业务逻辑载体；</li>
+<li>区块链按时间序列化区块数据，整个网络有一个最终确定状态；</li>
+<li>区块链只对添加有效，对其他操作无效；</li>
+<li>交易基于非对称加密的公私钥验证；</li>
+<li>区块链网络要求拜占庭将军容错;</li>
+<li>共识算法能够“解决”双花问题。<h3 id="区块链的类型"><a href="#区块链的类型" class="headerlink" title="区块链的类型"></a>区块链的类型</h3><h4 id="1-共有链："><a href="#1-共有链：" class="headerlink" title="1. 共有链："></a>1. 共有链：</h4>我们先来介绍公有链。公有链 ，顾名思义，它是公有的、开放的。在区块链中，公有链是开放程度最高，也是去中心化属性最强的。</li>
+</ol>
+<p>在公有链中，数据的数据的存储、更新、维护、操作都不再依赖于一个中心化的服务器，而是依赖于每一个网络节点，这就意味着，公有链上的数据是由全球互联网上成千上万的网络节点共同记录维护的，没有人能够擅自篡改其中的数据。</p>
+<h4 id="2-联盟链："><a href="#2-联盟链：" class="headerlink" title="2. 联盟链："></a>2. 联盟链：</h4><p>联盟链，是公司与公司、组织与组织之间达成联盟的模式，维护链上数据的节点都来自于该联盟中的公司或者组织，记录维护数据的权力掌握在联盟成员手中。采用联盟链的群体主要是：银行、保险、证券、商业协会、集团企业等。</p>
+<p>联盟链其实很好理解，就是公司之间形成一种联盟的关系：</p>
+<p>假设 A 公司、B 公司和 C 公司组成联盟链，那么，这条联盟链上的数据只对 A、B、C 三家公司的运维人员开放，维护联盟链的人只能是 A、B、C 三家公司的运维人员，只有他们才有操作数据的权利</p>
+<h4 id="3-私有链"><a href="#3-私有链" class="headerlink" title="3. 私有链"></a>3. 私有链</h4><p>私有链是一种不对外公开的、只有被授权的节点才可以参与并查看数据的私有区块链。采用私有链的群体主要是大型金融机构、大型企业、政府部门等。</p>
+<p>私有链最典型的就是央行开发的、用于发行央行数字货币的区块链，这个链只能由央行来做记账，个人是不可能参与记账的。</p>
+<h3 id="区块链的核心技术组成"><a href="#区块链的核心技术组成" class="headerlink" title="区块链的核心技术组成"></a>区块链的核心技术组成</h3><h4 id="1-P2P-网络协议"><a href="#1-P2P-网络协议" class="headerlink" title="1. P2P 网络协议"></a>1. P2P 网络协议</h4><p>P2P 网络协议是所有区块链的最底层模块，负责交易数据的网络传输和广播、节点发现和维护。</p>
+<h4 id="2-分布式一致性算法（共识机制）"><a href="#2-分布式一致性算法（共识机制）" class="headerlink" title="2. 分布式一致性算法（共识机制）"></a>2. 分布式一致性算法（共识机制）</h4><p>在经典分布式计算领域，我们有 Raft 和 Paxos 算法家族代表的非拜占庭容错算法，以及具有拜占庭容错特性的 PBFT 共识算法。</p>
+<ul>
+<li>PoW：通常是指在给定的约束下，求解一个特定难度的数学问题，谁解的速度快，谁就能获得记账权（出块）权利。这个求解过程往往会转换成计算问题，所以在比拼速度的情况下，也就变成了谁的计算方法更优，以及谁的设备性能更好。比特币本身的演化很好地诠释了这个问题，中本聪设计的思路本来是由 CPU 计算。随着市场发展，人们发现 GPU 也可以参与其中，而且效率可以达到十倍百倍，现在，这项工作基本以 ASIC 专业挖矿芯片为主。正如我们在挖矿的时候，买一台蚂蚁矿机53T，72T什么的，就是算力越高，收入就越高（也不一定）。</li>
+<li>PoS：这是一种股权证明机制，它的基本概念是产生区块的难度应该与你在网络里所占的股权（所有权占比）成比例，目前有三个版本 PoS1.0、PoS2.0、PoS3.0。它实现的核心思路是：使用你所锁定代币的币龄（CoinAge）以及一个小的工作量证明，去计算一个目标值，当满足目标值时，你将可能获取记账权。</li>
+<li>PoS：这是一种股权证明机制，它的基本概念是产生区块的难度应该与你在网络里所占的股权（所有权占比）成比例，目前有三个版本 PoS1.0、PoS2.0、PoS3.0。它实现的核心思路是：使用你所锁定代币的币龄（CoinAge）以及一个小的工作量证明，去计算一个目标值，当满足目标值时，你将可能获取记账权。<h4 id="3-加密签名算法"><a href="#3-加密签名算法" class="headerlink" title="3. 加密签名算法"></a>3. 加密签名算法</h4>我们常见的算法，也就是hash算法中的SHA256，比特币采用的算法，在挖矿的时候也就是采用的是这个算法。<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3>大概认识完区块链后，区块链技术就是一个以去中心化（弱中心化）为目的，由多个用户来进行维护，对数据进行分布式存储记录。这些数据并且是不可篡改的。<h3 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h3>根据区块链的技术我们思考一下哪里能用到呢，如何落地一个区块链项目呢（除过类似于比特币）？ 就像腾讯云提供的TBAAS区块链的基础服务，那我们如何使用TBAAS 来应用到业务逻辑上呢？？</li>
 </ul>
-<p>　　二者的区别主要表现在：</p>
-<p>　　（1）==研究对象不同==。微观经济学的研究对象是单个经济单位，如家庭、厂商等。正如美国经济学家J亨德逊（JHenderson）所说居民户和厂商这种单个单位的最优化行为奠定了微观经济学的基础。而宏观经济学的研究对象则是整个经济，研究整个经济的运行方式与规律，从总量上分析经济问题。正如萨缪尔逊所说，宏观经济学是根据产量、收入、价格水平和失业来分析整个经济行为。美国经济学家E夏皮罗（EShapiro）则强调了宏观经济学考察==国民经济作为一个整体的功能==。</p>
-<p>　　（2）==解决的问题不同==。==微观经济学要解决的是资源配置问题==，即生产什么、如何生产和为谁生产的问题，以实现个体效益的最大化。宏观经济学则把资源配置作为既定的前提，==研究社会范围内的资源利用问题，以实现社会福利的最大化==。</p>
-<p>　　（3）==研究方法不同==。微观经济学的研究方法是个量分析，即研究经济变量的单项数值如何决定。而宏观经济学的研究方法则是总量分析，即对能够反映整个经济运行情况的经济变量的决定、变动及其相互关系进行分析。这些总量包括两类，一类是个量的总和，另一类是平均量。因此，宏观经济学又称为总量经济学。</p>
-<p>　　（4）==基本假设不同==。</p>
+<p>参考：1. <a href="https://time.geekbang.org/column/article/5601《深入浅出区块链陈浩元界CTO》" target="_blank" rel="noopener">https://time.geekbang.org/column/article/5601《深入浅出区块链陈浩元界CTO》</a><br>2. <a href="https://www.chainnews.com/articles/007931884124.htm《联闻》" target="_blank" rel="noopener">https://www.chainnews.com/articles/007931884124.htm《联闻》</a><br>3. wiki百科：<a href="https://zh.wikipedia.org/wiki/%E5%8C%BA%E5%9D%97%E9%93%BEhe" target="_blank" rel="noopener">https://zh.wikipedia.org/wiki/%E5%8C%BA%E5%9D%97%E9%93%BEhe</a></p>
 
       
 
@@ -372,7 +1014,7 @@
 
       
         <p class="article-more-link">
-          <a class="article-more-a" href="/2020/05/17/%E5%BE%AE%E8%A7%82%E7%BB%8F%E6%B5%8E%E5%AD%A6%E5%92%8C%E5%AE%8F%E8%A7%82%E7%BB%8F%E6%B5%8E%E5%AD%A6/">展开全文 >></a>
+          <a class="article-more-a" href="/2020/05/17/%E4%BB%A5%E6%AD%A3%E7%A1%AE%E5%A7%BF%E5%8A%BF%E7%90%86%E8%A7%A3%E5%8C%BA%E5%9D%97%E9%93%BE%E6%8A%80%E6%9C%AF%EF%BC%9F/">展开全文 >></a>
         </p>
       
 
@@ -402,58 +1044,33 @@
 
 
   
-    <article id="post-阿里代码规约为什么不让使用Executors包装好线程池呢" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+    <article id="post-比特币白皮书" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2020/05/17/%E9%98%BF%E9%87%8C%E4%BB%A3%E7%A0%81%E8%A7%84%E7%BA%A6%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E8%AE%A9%E4%BD%BF%E7%94%A8Executors%E5%8C%85%E8%A3%85%E5%A5%BD%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%91%A2/">阿里代码规约为什么不让使用Executors包装好线程池呢</a>
+      <a class="article-title" href="/2020/05/17/%E6%AF%94%E7%89%B9%E5%B8%81%E7%99%BD%E7%9A%AE%E4%B9%A6/">比特币白皮书</a>
     </h1>
   
 
         
-        <a href="/2020/05/17/%E9%98%BF%E9%87%8C%E4%BB%A3%E7%A0%81%E8%A7%84%E7%BA%A6%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E8%AE%A9%E4%BD%BF%E7%94%A8Executors%E5%8C%85%E8%A3%85%E5%A5%BD%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%91%A2/" class="archive-article-date">
-  	<time datetime="2020-05-16T17:09:33.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-17</time>
+        <a href="/2020/05/17/%E6%AF%94%E7%89%B9%E5%B8%81%E7%99%BD%E7%9A%AE%E4%B9%A6/" class="archive-article-date">
+  	<time datetime="2020-05-16T17:58:07.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-17</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <h4 id="在Executors下主要有5个静态方法："><a href="#在Executors下主要有5个静态方法：" class="headerlink" title="在Executors下主要有5个静态方法："></a>在Executors下主要有5个静态方法：</h4><p><strong>1. Executors.newWorkStealingPool</strong></p>
-<ul>
-<li>JDK8引入，创建持有足够线程的线程池支持给定的并行度，并通过使用多个队列减少竞争，此构造方法把CPU数量设置为默认的并行度</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">public ForkJoinPool(int parallelism,</span><br><span class="line">                    ForkJoinWorkerThreadFactory factory,</span><br><span class="line">                    UncaughtExceptionHandler handler,</span><br><span class="line">                    boolean asyncMode) &#123;</span><br><span class="line">    this(checkParallelism(parallelism),</span><br><span class="line">         checkFactory(factory),</span><br><span class="line">         handler,</span><br><span class="line">         asyncMode ? FIFO_QUEUE : LIFO_QUEUE,</span><br><span class="line">         &quot;ForkJoinPool-&quot; + nextPoolId() + &quot;-worker-&quot;);</span><br><span class="line">    checkPermission();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+        
 
-<p><strong>2. Executors.newCacheThreadPool</strong></p>
-<ul>
-<li>这个线程池是一个没有核心线程数的，且最大线程数是Integer.MAX_VALUE，且使用的队列是SynchronousQueue，这个队列有点反人类，他不存储元素的阻塞队列，在创建元素的时候每一个put操作必须等待take操作，否则就不能添加元素 。这样我们就知道了因为没有核心线程数，所以刚来的任务我们都会进入到队列中，但是这个队列没有take也不会put，此时那就是说队列满了，然后就创建最大线程数。且设置的最大线程数在空闲状态下的存活时间为60秒。当有线程闲下来的时候，如果有新的任务来的时候就是用空闲线程，但是有可能出现瞬间来了大量的请求，此时就会无限创建线程直到Integer.MAX_VALUE个线程，很多机器应该在没有达到之前就会OOM了。创建一个线程就会分配堆，本地方法栈，java虚拟机栈等。所以就很容易就OOM了<br><img src="https://img-blog.csdnimg.cn/20200505224941972.png" alt="在这里插入图片描述"></li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public static ExecutorService newCachedThreadPool() &#123;</span><br><span class="line">        return new ThreadPoolExecutor(0, Integer.MAX_VALUE,</span><br><span class="line">                                      60L, TimeUnit.SECONDS,</span><br><span class="line">                                      new SynchronousQueue&lt;Runnable&gt;());</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>3. Executors.newScheduledThreadPool</strong></p>
-<ul>
-<li>线程数最大到Integer.MAX_VALUE,与上面所说的一样都有可能会OOM，他是ScheduledExecutorService接口家族的实现类，支持定时及周期性任务执行。与newCacheThreadPool的区别就是不回收工作线程。从下面代码可以看出到最后也是使用了ThreadPoolExcutor这个类然定义了对应对参数。如设置了最大线程数的存活时间是0秒。<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">public static ScheduledExecutorService newScheduledThreadPool(int corePoolSize) &#123;</span><br><span class="line">    return new ScheduledThreadPoolExecutor(corePoolSize);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public ScheduledThreadPoolExecutor(int corePoolSize) &#123;</span><br><span class="line">    super(corePoolSize, Integer.MAX_VALUE, 0, NANOSECONDS,</span><br><span class="line">          new DelayedWorkQueue());</span><br><span class="line">&#125;</span><br><span class="line">    public ThreadPoolExecutor(int corePoolSize,</span><br><span class="line">                          int maximumPoolSize,</span><br><span class="line">                          long keepAliveTime,</span><br><span class="line">                          TimeUnit unit,</span><br><span class="line">                          BlockingQueue&lt;Runnable&gt; workQueue) &#123;</span><br><span class="line">    this(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue,</span><br><span class="line">         Executors.defaultThreadFactory(), defaultHandler);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+	<div class="row">
+    <embed src="https://bitcoin.org/files/bitcoin-paper/bitcoin_zh_cn.pdf" width="100%" height="550" type="application/pdf">
+	</div>
 
 
-</li>
-</ul>
-<p><strong>4. Executors.newSingleThreadExecutor</strong></p>
-<ul>
-<li>创建一个单线程的的线程池，相当于单线程串行执行任务，保证按任务的提交顺序依次执行。这个线程池虽然不会因为线程创建过多而oom但是会因为阻塞到队列而最后产生oom，因为他使用的是LinkedBlockingQueue 看源码我们可知他的最大长度也是Integer.MAX_VALUE，所以大量任務的提交也会导致OOM。<br><img src="https://img-blog.csdnimg.cn/20200505225000397.png" alt="在这里插入图片描述"></li>
-</ul>
-<p>源码： </p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">public static ExecutorService newSingleThreadExecutor() &#123;</span><br><span class="line">    return new FinalizableDelegatedExecutorService</span><br><span class="line">        (new ThreadPoolExecutor(1, 1,</span><br><span class="line">                                0L, TimeUnit.MILLISECONDS,</span><br><span class="line">                                new LinkedBlockingQueue&lt;Runnable&gt;()));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p><strong>5. Executors.newFixedThreadPool</strong></p>
-<ul>
-<li>输入的参数即是固定的线程数，即是核心的线程数也是最大的线程数，不存在空闲线程</li>
-<li>看下面的源码我们可知最大线程数和核心线程数是相等的，也就可说只有核心线程数，我们都知道如果核心线程数没有特定的配置的话核心线程数一旦创建就不会被回收的。但是我们可以看到他使用的也是LinkedBlockingQueue且默认的大小为Integer.MAX_VALUE，所以也会OOM。<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">public static ExecutorService newFixedThreadPool(int nThreads) &#123;</span><br><span class="line">    return new ThreadPoolExecutor(nThreads, nThreads,</span><br><span class="line">                                  0L, TimeUnit.MILLISECONDS,</span><br><span class="line">                                  new LinkedBlockingQueue&lt;Runnable&gt;());</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="其实看了上面的Excutors的五个方法后，在阿里规约里面时不可以使用除第一个外的四个包内线程的，因为他们都会引起OOM。"><a href="#其实看了上面的Excutors的五个方法后，在阿里规约里面时不可以使用除第一个外的四个包内线程的，因为他们都会引起OOM。" class="headerlink" title="其实看了上面的Excutors的五个方法后，在阿里规约里面时不可以使用除第一个外的四个包内线程的，因为他们都会引起OOM。"></a>其实看了上面的Excutors的五个方法后，在阿里规约里面时不可以使用除第一个外的四个包内线程的，因为他们都会引起OOM。</h3><h3 id="从源码我们可以看出都是有ThreadPoolExcutor这个类传入不同的参数而实现的所以说只要我们搞懂其中传入的7个参数的含义，就可以大概搞懂线程池的冰山一角了"><a href="#从源码我们可以看出都是有ThreadPoolExcutor这个类传入不同的参数而实现的所以说只要我们搞懂其中传入的7个参数的含义，就可以大概搞懂线程池的冰山一角了" class="headerlink" title="==从源码我们可以看出都是有ThreadPoolExcutor这个类传入不同的参数而实现的所以说只要我们搞懂其中传入的7个参数的含义，就可以大概搞懂线程池的冰山一角了=="></a>==从源码我们可以看出都是有ThreadPoolExcutor这个类传入不同的参数而实现的所以说只要我们搞懂其中传入的7个参数的含义，就可以大概搞懂线程池的冰山一角了==</h3><img src="https://img-blog.csdnimg.cn/20200505224911619.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></li>
-</ul>
 
       
 
@@ -466,273 +1083,7 @@
 
       
         <p class="article-more-link">
-          <a class="article-more-a" href="/2020/05/17/%E9%98%BF%E9%87%8C%E4%BB%A3%E7%A0%81%E8%A7%84%E7%BA%A6%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E8%AE%A9%E4%BD%BF%E7%94%A8Executors%E5%8C%85%E8%A3%85%E5%A5%BD%E7%BA%BF%E7%A8%8B%E6%B1%A0%E5%91%A2/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-day01" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/05/17/day01/">中流砥柱java的动态代理</a>
-    </h1>
-  
-
-        
-        <a href="/2020/05/17/day01/" class="archive-article-date">
-  	<time datetime="2020-05-16T16:59:36.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-17</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>在我们学习Spring框架的时候我们是否思考过，Spring是如何实现bean实列注入到IOC容器中呢？我们如何去</p>
-<h3 id="权威指南"><a href="#权威指南" class="headerlink" title="权威指南"></a>权威指南</h3><p>代理是基本的设计模式之一，他是为了提供额外的或不同的操作，而插入的用来代替“实际”对象的对象。这些操作通常涉及与“实际”对象的通信，因此代理通常充当着中间人的角色。<br>Java的动态代理比代理的思想更迈进了一步，因为他可以动态地创建代理并动态的处理对所代理的方法的调用。在动态代理上所做的所有调用都会被重定向到单一的调用处理器上，他的工作是揭示调用的类型并确定相应的对策。      ——-《ThinKing in Java》</p>
-<h3 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h3><ul>
-<li><strong>类比生活</strong><br>代理，平时生活中代理无处不在，如手机生产商的代理商A，A不仅能帮忙给生产商卖手机而且也提供了售后功能。代码中被代理对象就是生产商，而代理商A就是代理对象，可以做生产商的事情，为了方便客户还提供了售后的功能。但是此时这个生产商不固定，且随时会变，且为了利益最大化，那个生产商拿货便宜，就拿谁的货，就在这个时候我们是不是就得成为一个动态代理商？这样就可以方便用户，还能和生产商解耦合。</li>
-<li>抽象层面<br>将一个对象被另一个对象代理，代理对象可以扩展被代理对象的方法，且能在被代理对象对象增加方法。这样实现好之后我们所代理的对象会在编译和累加载之后将带代理对象和被代理对象绑定到一块了。为了让代理更加方便和实用于是就得出了动态代理，也就是再程序运行时可以根据被代理对象生成代理对象。（在java中反射机制就是可以让代码进行动态加载和生成对象）<h3 id="jdk动态代理"><a href="#jdk动态代理" class="headerlink" title="jdk动态代理"></a>jdk动态代理</h3></li>
-</ul>
-<ol>
-<li>JDK的动态代理也就是基于Java的反射机制实现的。</li>
-<li>我们先来看一下Java中的动态代理在代码中是如何实现的： </li>
-</ol>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">package dynamicproxy;</span><br><span class="line"></span><br><span class="line">import java.lang.reflect.*;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * @Author:yuanxindong</span><br><span class="line"> * @Date:2020&#x2F;5&#x2F;90:53</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class Client &#123;</span><br><span class="line">    public static void main(String[] args) throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException &#123;</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F;实例化一个对象</span><br><span class="line">        &#x2F;&#x2F;分别分为两种方事实现的，一个是直接new 关键字创建一个对象，</span><br><span class="line">        &#x2F;&#x2F; 第二种是通过反射机制穿件一个对象</span><br><span class="line">        &#x2F;&#x2F;UserServiceImpl userServiceLmpl &#x3D; new UserServiceImpl();</span><br><span class="line">        &#x2F;&#x2F;1。 读取加载&quot;dynamicproxy.UserServiceImpl&quot;路径下的class对象</span><br><span class="line">        Class aClass &#x3D; Class.forName(&quot;dynamicproxy.UserServiceImpl&quot;);</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F;使用class对象中的方法获取父类加载器</span><br><span class="line">        &#x2F;&#x2F;ClassLoader classLoader &#x3D; userServiceLmpl.getClass().getClassLoader();</span><br><span class="line">        ClassLoader classLoader &#x3D; aClass.getClassLoader();</span><br><span class="line">        &#x2F;&#x2F;Class []  interfaces &#x3D; userServiceLmpl.getClass().getInterfaces();</span><br><span class="line">        &#x2F;&#x2F;获取实现class实现的接口</span><br><span class="line">        Class[] interfaces &#x3D; aClass.getInterfaces();</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F;获取这个类的、构造方法</span><br><span class="line">        Constructor constructors &#x3D; aClass.getConstructor();</span><br><span class="line">        &#x2F;&#x2F;通过构造方法 去实例化这个对象</span><br><span class="line">        UserServiceImpl userServiceLmpl &#x3D; (UserServiceImpl) constructors.newInstance();</span><br><span class="line">        &#x2F;&#x2F;将获取到的对象传入对应的处理器上，通过反射的方式拿到对应的方法切织入</span><br><span class="line">        InvocationHandler logHandler &#x3D; new LogHandler(userServiceLmpl);</span><br><span class="line">        &#x2F;&#x2F;创建动态代理对象的接口</span><br><span class="line">        UserService proxy &#x3D; (UserService) Proxy.newProxyInstance(classLoader, interfaces, logHandler);</span><br><span class="line"></span><br><span class="line">        proxy.select();</span><br><span class="line">        proxy.update();</span><br><span class="line">        ProxyUtils.generateClassFile(userServiceLmpl.getClass(), &quot;UserServiceProxy&quot;);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>被代理的对象</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;**</span><br><span class="line"> * @Author:yuanxindong</span><br><span class="line"> * @Date:2020&#x2F;5&#x2F;90:56</span><br><span class="line"> *&#x2F;</span><br><span class="line">public interface UserService &#123;</span><br><span class="line">    public void select();</span><br><span class="line">    public void update();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">package dynamicproxy;</span><br><span class="line"></span><br><span class="line">import java.lang.reflect.InvocationHandler;</span><br><span class="line">import java.lang.reflect.Method;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * @Author:yuanxindong</span><br><span class="line"> * @Date:2020&#x2F;5&#x2F;90:47</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class LogHandler  implements InvocationHandler &#123;</span><br><span class="line">    private Object  target;</span><br><span class="line">    &#x2F;&#x2F;使用构造方法将代理对象传入代理对象</span><br><span class="line">    public LogHandler(Object target)&#123;</span><br><span class="line">        this.target &#x3D; target;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;&#x2F;通过反射的方式执行并织入（不知道用的是否合理）代理方法，这个接口实现方法会被newProxyInstance（）方法使用</span><br><span class="line">    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable &#123;</span><br><span class="line">        before();</span><br><span class="line">        &#x2F;&#x2F;</span><br><span class="line">        Object  result  &#x3D; method.invoke(target,args);</span><br><span class="line">        after();</span><br><span class="line">        return result;</span><br><span class="line">    &#125;</span><br><span class="line">    private void before()&#123;</span><br><span class="line">        System.out.println(&quot;log start&quot;+ System.currentTimeMillis());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private  void after()&#123;</span><br><span class="line">        System.out.println(&quot;log end&quot; + System.currentTimeMillis());</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>执行结果：<br><img src="https://img-blog.csdnimg.cn/20200515015828273.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-<h3 id="demo中的InvocationHandler"><a href="#demo中的InvocationHandler" class="headerlink" title="demo中的InvocationHandler"></a>demo中的InvocationHandler</h3><ol>
-<li>从demo中看我们将代理对象的其他方法是在实现InvocationHandler的类中写的，通过实现的invoke（）方法将被代理类织入代理类的方法中 然后在newProxyInstance（）方法中实例化这个 invoke（）方法成为代理对象。如下面的源码所示：<br><img src="https://img-blog.csdnimg.cn/2020051501585994.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3>jdk的动态代理通过Java反射机制实现<br>主要的方法是：</li>
-</ol>
-<ul>
-<li>实现被代理的方法：继承InvocationHandler接口 实现其invoke方法</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">InvocationHandler logHandler &#x3D; new LogHandler(userServiceLmpl);</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>使用Proxy.newProxyInstance(classLoader, interfaces, logHandler)，创建代理对象。</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">UserService proxy &#x3D; (UserService) Proxy.newProxyInstance(classLoader, interfaces, logHandler);</span><br></pre></td></tr></table></figure>
-
-<h3 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h3><ul>
-<li>Spring AOP是怎样实现的呢？？ 也是像我们上面的方法那样织入的吗？？？</li>
-</ul>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/05/17/day01/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-Java中是否直接可以使用enum进行传输" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/05/17/Java%E4%B8%AD%E6%98%AF%E5%90%A6%E7%9B%B4%E6%8E%A5%E5%8F%AF%E4%BB%A5%E4%BD%BF%E7%94%A8enum%E8%BF%9B%E8%A1%8C%E4%BC%A0%E8%BE%93/">Java中是否直接可以使用enum进行传输</a>
-    </h1>
-  
-
-        
-        <a href="/2020/05/17/Java%E4%B8%AD%E6%98%AF%E5%90%A6%E7%9B%B4%E6%8E%A5%E5%8F%AF%E4%BB%A5%E4%BD%BF%E7%94%A8enum%E8%BF%9B%E8%A1%8C%E4%BC%A0%E8%BE%93/" class="archive-article-date">
-  	<time datetime="2020-05-16T16:41:38.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-17</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>我们在进行传输的时候 会有一些状态值，如Status为1代表删除，为0代表失败或者怎么样的。只传输一个）0或者1过去给第三方（此处不包括给前端），如果没有契约第三方会不认识你这个是什么意思，那我们在平时写业务逻辑的时候使用枚举很轻易就知道了什么状态什么值。所以我们在构建DTO对象的时候里面放一个枚举来表示。</p>
-<p>==首先在阿里的规范里是这样说的：<br>【强制】二方库里可以定义枚举类型，参数可以使用枚举类型，但是接口返回值不允许使用枚举类型或者包含枚举类型的 POJO 对象。==<br>那到底为啥不能用呢？</p>
-<h3 id="枚举"><a href="#枚举" class="headerlink" title="枚举"></a>枚举</h3><ol>
-<li>首先我们得先思考一下枚举是否可以进行序列化，我们在把对象进行传输的时候需要将这个对象序列化为字节序列进行传输（在linux中一切皆文件，JVM虚拟机将对象变为字节给到内核通过传输协议进行打包传）枚举在进行编译后会生成一个相关的类，这个类，这个类继承了JavaAPI中的java.lang.Enum类。那么我们看看这个类，毫无疑问可以序列化。继承了Serializable接口。那么就肯定就是可以序列化了。<br><img src="https://img-blog.csdnimg.cn/20200510224623419.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><h3 id="Enum实战序列化"><a href="#Enum实战序列化" class="headerlink" title="Enum实战序列化"></a>Enum实战序列化</h3><ol>
-<li>创建一个枚举类<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">package SerializableEnum;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * @Author:yuanxindong</span><br><span class="line"> * @Date:2020&#x2F;5&#x2F;101:33</span><br><span class="line"> *&#x2F;</span><br><span class="line">public enum PersonEnum &#123;</span><br><span class="line">    &#x2F;**</span><br><span class="line">     * 小圆</span><br><span class="line">     *&#x2F;</span><br><span class="line">    YUANXINDONG(&quot;yuanxindong&quot;,1);</span><br><span class="line"></span><br><span class="line">    ;</span><br><span class="line">    private String age;</span><br><span class="line">    private int i;</span><br><span class="line"></span><br><span class="line">    PersonEnum(String yuanxindong, int i) &#123;</span><br><span class="line">        this.age &#x3D; yuanxindong;</span><br><span class="line">        this.i &#x3D; i;</span><br><span class="line">    &#125;&#125;</span><br></pre></td></tr></table></figure>
-
-</li>
-</ol>
-</li>
-</ol>
-<p>2.将枚举类放入Person对象，通过本地序列化存入target文件夹中，再进行反序列化，读取查看枚举的值</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line">package SerializableEnum;</span><br><span class="line"></span><br><span class="line">import java.io.FileInputStream;</span><br><span class="line">import java.io.FileOutputStream;</span><br><span class="line">import java.io.IOException;</span><br><span class="line">import java.io.ObjectInputStream;</span><br><span class="line">import java.io.ObjectOutputStream;</span><br><span class="line">import java.io.Serializable;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * @Author:yuanxindong</span><br><span class="line"> * @Date:2020&#x2F;5&#x2F;101:31</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class Person implements Serializable &#123;</span><br><span class="line">    private String name;</span><br><span class="line">    PersonEnum a;</span><br><span class="line"></span><br><span class="line">    public void setName(String name) &#123;</span><br><span class="line">        this.name &#x3D; name;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setA(PersonEnum a) &#123;</span><br><span class="line">        this.a &#x3D; a;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public String getName() &#123;</span><br><span class="line">        return name;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public PersonEnum getA() &#123;</span><br><span class="line">        return a;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public String toString() &#123;</span><br><span class="line">        return &quot;Person&#123;&quot; +</span><br><span class="line">                &quot;name&#x3D;&#39;&quot; + name + &#39;\&#39;&#39; +</span><br><span class="line">                &quot;, a&#x3D;&quot; + a +</span><br><span class="line">                &#39;&#125;&#39;;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws IOException, ClassNotFoundException &#123;</span><br><span class="line">        ObjectOutputStream oos &#x3D; new ObjectOutputStream(new FileOutputStream(&quot;object.txt&quot;));</span><br><span class="line">        Person p &#x3D; new Person();</span><br><span class="line">        p.setA(PersonEnum.YUANXINDONG);</span><br><span class="line">        p.setName(&quot;小圆&quot;);</span><br><span class="line">        oos.writeObject(p);</span><br><span class="line"></span><br><span class="line">        ObjectInputStream ois &#x3D; new ObjectInputStream(new FileInputStream(&quot;D:\\workCode\\票税助手\\aresV3\\springCodestudy\\object.txt&quot;));</span><br><span class="line">        Person brady &#x3D; (Person) ois.readObject();</span><br><span class="line">        brady.getA();</span><br><span class="line"></span><br><span class="line">        System.out.println(brady);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<ol start="3">
-<li>执行结果：<br><img src="https://img-blog.csdnimg.cn/20200510224703819.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>但是在控制台输出的对象是枚举的命名，没有枚举中的值，这时为什么呢？<h1 id=""><a href="#" class="headerlink" title=""></a><img src="https://img-blog.csdnimg.cn/2020051022481480.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></h1>我用的是aliFastJson转还为JsonObject的我们看看他里面的实现。只是拿了对应枚举的name（感觉是个坑啊），这也阿里规范中不能使用枚举放在DTO的原因之一吧==<br><img src="https://img-blog.csdnimg.cn/20200510224846409.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>上面的内容整明了枚举是可以进行序列化的，是可以被传输的，他的实现也是通过类来实现的，除了fastJSON那一步，使用都没有问题的。<h3 id="其他角度考虑"><a href="#其他角度考虑" class="headerlink" title="其他角度考虑"></a>其他角度考虑</h3></li>
-</ol>
-<p><strong>借鉴知乎</strong></p>
-<p><em>使用枚举的确会带来扩展兼容性的问题，这点很多答主都说的很好了，我就说一下为什么参数上可以使用枚举的原因吧。咱们先假定对枚举的扩展只是新增值，而不是减少值。比如说性别中本来是男和女，现在要增加一个transgender, 但我们极少极少会有需求说，把性别中的已有男或者女去掉。（我觉得这个假设是参数可以使用枚举型的前提）在这个假定下如果我们在接口中使用枚举型，如孤尽兄在java开发手册中所述，分为参数和返回值两种情况。不管是微服务之间的互相调用，还是手机客户端到服务器的调用，在不停机的情况下，服务器端和客户端是很难一起更新的，往往我们是服务器端先来支持新feature，然后再来逐步更新客户端。我想孤尽兄说参数可以使用枚举型，也是基于这种更新升级方式。因为服务器端如果突然开始返回transgender这个新性别，客户端吃不进去（反序列化不了），客户端就炸了。但如果服务器端只是在参数上开始接受新性别，那就不怕老客户端，反正老客户端还在那里继续发送男和女这两种性别，服务器端都认识，就不会出错。两边可以一直相安无事，慢慢等所有客户端都升级。但是呢，如果我们用string来代替枚举，服务器端贸然返回一个新的值，客户端不知道怎么处理，也可能会产生其他问题，比如说钱算错了之类业务层面的问题。所以客户端代码可能要先更新一点，让其能处理这个新的值。我觉得阿里把这个标准放在手册里，也是多年的经验教训，两害相权取其轻吧。因为很多应用是没法强制客户端一起更新的。尤其是手机移动客户端，ios可能还要审核，很难做到客户端和服务器端同步更新。如果是微服务，也很难在不停机的情况下，把通过枚举耦合两个微服务一起更新。</em></p>
-<h3 id="看完大佬的说法个人感觉："><a href="#看完大佬的说法个人感觉：" class="headerlink" title="看完大佬的说法个人感觉："></a>看完大佬的说法个人感觉：</h3><p>是的你在一个项目中维护是没有什么问题。但是多个项目使用同一个枚举怎么搞。要么这个枚举一处动即全动。所有的项目使用这一个枚举。比如说全公司有一个通用的发票类型枚举，有几个状态值代表一钟发票类型，于是这个枚举维护到公共配置上，通过动态加载技术，在每次发布或者有修改的时候进行动态加载。感觉同完美。小白的YY。落地难吗？？试一试。后面更新.</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/05/17/Java%E4%B8%AD%E6%98%AF%E5%90%A6%E7%9B%B4%E6%8E%A5%E5%8F%AF%E4%BB%A5%E4%BD%BF%E7%94%A8enum%E8%BF%9B%E8%A1%8C%E4%BC%A0%E8%BE%93/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-article-title" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2020/05/16/article-title/">java的反射机制到底是做什么的？</a>
-    </h1>
-  
-
-        
-        <a href="/2020/05/16/article-title/" class="archive-article-date">
-  	<time datetime="2020-05-16T12:02:57.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2020-05-16</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>在学习java的动态代理的时候用到了反射机制，那我们来对反射机制深入了解一下</p>
-<h3 id="权威指南"><a href="#权威指南" class="headerlink" title="权威指南"></a>权威指南</h3><p>通过wiki百科可知： 在计算机学中，反射（英语：reflection）是指计算机程序在运行时（runtime）可以访问、检测和修改它本身状态或行为的一种能力。[1]用比喻来说，反射就是程序在运行的时候能够“观察”并且修改自己的行为。</p>
-<p>在类型检测严格的面向对象的编程语言如Java中，一般需要在编译期间对程序中需要调用的对象的具体类型、接口、字段和方法的合法性进行检查。反射技术则允许将对需要调用的对象的信息检查工作从编译期间推迟到运行期间再现场执行。这样一来，可以在编译期间先不明确目标对象的接口名称、字段（fields，即对象的成员变量）、可用方法，然后在运行根据目标对象自身的信息决定如何处理。它还允许根据判断结果进行实例化新对象和相关方法的调用。</p>
-<h3 id="个人理解"><a href="#个人理解" class="headerlink" title="个人理解"></a>个人理解</h3><p>在一般情况下， 文件会在编译期转换为jvm可执行的字节码 .class 文件，这个执行过程是在类加载的时候执行的，但是jvm在类加载对这一过程并不严格，所以说这一加载步骤可以放在运行期执行。利用这一特性也就有了反射机制。</p>
-<p>反射机制很重要的一点就是“运行时”，其使得我们可以在程序运行时加载、探索以及使用编译期间完全未知的 .class 文件。换句话说，Java 程序可以加载一个运行时才得知名称的 .class 文件，然后获悉其完整构造，并生成其对象实体、或对其 fields（变量）设值、或调用其 methods（方法）。</p>
-<p>我感觉还有有点“干” ,反射也是创建对象的一种方式，使用new 关键字可以创建一个对象，那是因为我们知道他是个什么对象，而反射反射的意思是，我并不知道这个对象是什么，但是我可以通过class.forName()读取到这个对象，然后也可以读取到他的Method ，interface ，Construct等，还可以通过Invoke（）方法进行赋值等操作。</p>
-<h3 id="java中反射的使用"><a href="#java中反射的使用" class="headerlink" title="java中反射的使用"></a>java中反射的使用</h3><ol>
-<li>写一个demo</li>
-</ol>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line">package reflect;</span><br><span class="line"></span><br><span class="line">import java.lang.reflect.Constructor;</span><br><span class="line">import java.lang.reflect.InvocationTargetException;</span><br><span class="line">import java.lang.reflect.Method;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * @Author:yuanxindong</span><br><span class="line"> * @Date:2020&#x2F;5&#x2F;1113:23</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class Person extends Huaman&#123;</span><br><span class="line"></span><br><span class="line">    private  String name;</span><br><span class="line">    private  String gender;</span><br><span class="line"></span><br><span class="line">    public String getName() &#123;</span><br><span class="line">        return name;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setName(String name) &#123;</span><br><span class="line">        this.name &#x3D; name;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public String getGender() &#123;</span><br><span class="line">        return gender;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void setGender(String gender) &#123;</span><br><span class="line">        this.gender &#x3D; gender;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public String toString() &#123;</span><br><span class="line">        return &quot;Person&#123;&quot; +</span><br><span class="line">                &quot;name&#x3D;&#39;&quot; + name + &#39;\&#39;&#39; +</span><br><span class="line">                &quot;, gender&#x3D;&#39;&quot; + gender + &#39;\&#39;&#39; +</span><br><span class="line">                &#39;&#125;&#39;;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException &#123;</span><br><span class="line">        &#x2F;&#x2F;通过classLoad 获取类的 Class 对象实例。</span><br><span class="line">        Class c &#x3D; Class.forName(&quot;reflect.Person&quot;);</span><br><span class="line">        &#x2F;&#x2F;根据Class对象实例获取 Constructor 对象</span><br><span class="line">        Method setName &#x3D; c.getMethod(&quot;setName&quot;, String.class);</span><br><span class="line">        &#x2F;&#x2F;根据 Class 对象实例获取 Constructor 对象</span><br><span class="line">        Constructor constructor &#x3D; c.getConstructor();</span><br><span class="line">        &#x2F;&#x2F;使用Constructor对象的newInstance 方法获取反射类对象</span><br><span class="line">        Object o &#x3D; constructor.newInstance();</span><br><span class="line">        &#x2F;&#x2F;使用invoke方法调用创建实例对象的方法。</span><br><span class="line">        setName.invoke(o,&quot;yuanxindong&quot;);</span><br><span class="line">        &#x2F;&#x2F;查看调用是否成功</span><br><span class="line">        System.out.println(o.toString());</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<ol start="2">
-<li>下面是执行结果。<br><img src="https://img-blog.csdnimg.cn/20200513011817968.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></li>
-</ol>
-<p><strong>==上面的代码就可以看出来java中的反射基础使用，但是一个new关键字和直接一个set方法就能解决的问题为什么，非要使用反射呢？==</strong></p>
-<ul>
-<li>先明确一点，反射直接根据文件的地址获取class，将其加载到内存中       。不需要在刚开始进行编译，直接在运行期间进行读取加载。 这就是他的优势，我们使用new关键字这个类必须是被预先被加载过的，我们可以大概看一forName（）的源码：<br><img src="https://img-blog.csdnimg.cn/20200513011840605.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3dlaXhpbl80MDQxMzk2MQ==,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>其中的classLoad也就是父类加载器，我们在这里就先证明他就是去加载class对象了。（具体不在这里细究）。如果是使用new 关键字的话那么这个对象前提得是被解析过的（加载，验证，初始化和卸载这五个阶段顺序是确定的，类的加载过程必须按照这种顺序按部就班的开始，而解析阶段却不一定：他在某些情况下可以在初始化之后再开始《深入理解java虚拟机》）</li>
-<li>再者就是Java反射现在应用的场景，<ol>
-<li>JDBC的数据库连接</li>
-<li>Spring 框架的使用<ol>
-<li>将程序内所有 XML 或 Properties  </li>
-<li>配置文件加载入内存中<br>Java类里面解析xml或properties里面的内容，得到对应实体类的字节码字符串以及相关的属性信息</li>
-<li>使用反射机制，根据这个字符串获得某个类的Class实例</li>
-</ol>
-</li>
-<li>再在这里扯一下Spring为什么这么做呢？他的意思就是遵循“好莱坞规则”我不去找你，而是我来找你。也就是IOC和DI的意思，将对象创建好注入到IOC容器再使用依赖注入的方式主动注入到对应的类中。<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3>说了上面那么一大堆，也不知道吧反射机制说清楚没有，<br>java的反射的目的就是在==运行时期动态加载class对象==和==实例化对象==,主要使用的方法有：</li>
-</ol>
-</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Class.forName();</span><br><span class="line">class.getMethod();</span><br><span class="line">class.getConstructor();</span><br><span class="line">constructor.newInstance();</span><br><span class="line">method.invoke(Object,value);</span><br></pre></td></tr></table></figure>
-<h3 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h3><p>我们在使用携程的文件配置系统 APollo的时候，他是如何达到更改配置后达到热更新的？是否基础原理也是用到了反射？？</p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2020/05/16/article-title/">展开全文 >></a>
+          <a class="article-more-a" href="/2020/05/17/%E6%AF%94%E7%89%B9%E5%B8%81%E7%99%BD%E7%9A%AE%E4%B9%A6/">展开全文 >></a>
         </p>
       
 
@@ -764,7 +1115,7 @@
   
   
     <nav id="page-nav">
-      <a class="extend prev" rel="prev" href="/page/2/">&amp;laquo; Prev</a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span>
+      <a class="extend prev" rel="prev" href="/page/2/">&amp;laquo; Prev</a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><a class="page-number" href="/page/5/">5</a><a class="extend next" rel="next" href="/page/4/">Next &amp;raquo;</a>
     </nav>
   
 
