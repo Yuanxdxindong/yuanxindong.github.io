@@ -162,7 +162,41 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>开发新项目，写Swager的mode的时候用到了嵌套Model，于是在代码中，出现了静态内部类。在codeReview的时候稍微和大家聊了一下。尤其是Static 修饰类和修饰对象和变量不一样呢？</p>
+<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><h3 id="1-内部类"><a href="#1-内部类" class="headerlink" title="1. 内部类"></a>1. 内部类</h3><ul>
+<li>可以将一个类的定义放在另一个类的定义内部，这就是内部类；</li>
+<li>嵌套类是其封闭类的成员。非静态嵌套类（内部类）可以访问封闭类的其他成员，即使它们被声明为私有的也是如此。静态嵌套类无权访问封闭类的其他成员。为一体的一个部件OuterClass，一个嵌套类可以声明private，public，protected，或包专用。（回想一下，只能声明外部类public或将其包装为私有。）</li>
+</ul>
+<h3 id="2-静态内部类"><a href="#2-静态内部类" class="headerlink" title="2. 静态内部类"></a>2. 静态内部类</h3><ul>
+<li>再一个普通类里面，给内部类加上static关键字的修饰；</li>
+<li>与类方法和变量一样，静态嵌套类与其外部类相关联。与静态类方法一样，静态嵌套类不能直接引用其封闭类中定义的实例变量或方法：它只能通过对象引用来使用它们。（就和两个普通不同的类之间的使用）<h3 id="3-两者的区别"><a href="#3-两者的区别" class="headerlink" title="3. 两者的区别"></a>3. 两者的区别</h3></li>
+<li>内部类只是外部类的成员变量，通俗讲，就是你只能通过先调用外部类才能去拿到这个类（但是这是和组合还是有区别的）。</li>
+<li>但是静态内部类就像是一个普通类一样。可以直接调用，直接去new对象。<h3 id="4-Java-拥有嵌套类有什么作用呢？"><a href="#4-Java-拥有嵌套类有什么作用呢？" class="headerlink" title="4. Java 拥有嵌套类有什么作用呢？"></a>4. Java 拥有嵌套类有什么作用呢？</h3></li>
+<li>这是一种对仅在一个地方使用的类进行逻辑分组的方法：如果一个类仅对另一个类有用，那么将其嵌入该类并将两者保持在一起是合乎逻辑的。嵌套此类“帮助程序类”可使它们的程序包更加简化。</li>
+<li>它增加了封装：考虑两个顶级类A和B，其中B需要访问A的成员，否则将对其进行声明private。通过将类B隐藏在类A中，可以将A的成员声明为私有，而B可以访问它们。另外，B本身可以对外界隐藏。</li>
+<li>这可能会导致代码更具可读性和可维护性：在顶级类中嵌套小类会使代码更靠近使用位置。<h2 id="Demo"><a href="#Demo" class="headerlink" title="Demo"></a>Demo</h2></li>
+<li>talk is cheap ，Show me  Code；<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line">package 静态内部类;</span><br><span class="line"></span><br><span class="line">import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.BIConversion;</span><br><span class="line">import javassist.runtime.Inner;</span><br><span class="line">import lombok.Data;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * @authoryuanxindong</span><br><span class="line"> * @date: 2020&#x2F;6&#x2F;19 10:25 下午</span><br><span class="line"> *&#x2F;</span><br><span class="line">@Data</span><br><span class="line">public class OuterClassDemo &#123;</span><br><span class="line">    String outerStr;</span><br><span class="line"></span><br><span class="line">    public OuterClassDemo(String outerStr) &#123;</span><br><span class="line">        this.outerStr &#x3D; outerStr;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Data</span><br><span class="line">    public static class StaticInnerClass&#123;</span><br><span class="line">        public StaticInnerClass(String innerStr) &#123;</span><br><span class="line">            this.innerStr &#x3D; innerStr;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        private  String  innerStr;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    @Data</span><br><span class="line">    public class InnerClass&#123;</span><br><span class="line">        private String innerClassStr;</span><br><span class="line">        public InnerClass(String outerStr) &#123;</span><br><span class="line">            &#x2F;&#x2F;可以和外部类通讯</span><br><span class="line">            this.innerClassStr &#x3D; getOuterStr();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        OuterClassDemo staticClassDemo &#x3D;new OuterClassDemo(&quot;Outer&quot;);</span><br><span class="line">        staticClassDemo.getOuterStr();</span><br><span class="line">        &#x2F;&#x2F; 内部正常类是不能直接new出来的</span><br><span class="line">        &#x2F;&#x2F;  OuterClass outerClass &#x3D; new OuterClass();</span><br><span class="line">        StaticInnerClass innerClass &#x3D; new StaticInnerClass(&quot;StaticInner&quot;);</span><br><span class="line">        System.out.println(innerClass.getInnerStr());</span><br><span class="line">        initInnerClass();</span><br><span class="line">    &#125;</span><br><span class="line">    public static void initInnerClass()&#123;</span><br><span class="line">        OuterClassDemo staticClassDemo1 &#x3D; new OuterClassDemo(&quot;OuterClassDemo&quot;);</span><br><span class="line">        InnerClass innerClass &#x3D; staticClassDemo1.new InnerClass(&quot;outerStr&quot;);</span><br><span class="line">        System.out.println(innerClass.getInnerClassStr());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h2></li>
+<li>序列化强烈建议不要对内部类（包括 本地和 匿名类）进行序列化。当Java编译器编译某些构造（例如内部类）时，它会创建综合构造。</li>
+<li>这些是类，方法，字段以及其他在源代码中没有相应构造的构造。合成构造使Java编译器无需更改JVM就可以实现新的Java语言功能。但是，合成构造在不同的Java编译器实现中可能有所不同，这意味着.class文件在不同的实现中也可能有所不同。因此，如果序列化一个内部类，然后使用其他JRE实现对其进行反序列化，则可能会遇到兼容性问题。<h2 id="核心讨论"><a href="#核心讨论" class="headerlink" title="核心讨论"></a>核心讨论</h2></li>
+<li>了解了静态内部类后，那static为什么修饰了类，对于这个类也是起了一个全局可用的一个作用？ </li>
+<li>越想问题越多，还有就是为什么被Static 修饰的方法可以被类直接引用到？而static 修饰的类也可以被其他的类直接使用，而不依赖于对象。</li>
+</ul>
+<p>答 ：我们得明确一下 </p>
+<ul>
+<li>static修饰类的方法，表示这个方法和这个类对象没有关系，只是和这个类有关系</li>
+<li>static 修饰变量，按照是否静态的对类成员变量进行分类可分两种：一种是被static修饰的变量，叫静态变量或类变量；另一种是没有被static修饰的变量，叫实例变量。两者的区别是：</li>
+<li>对于静态变量在内存中只有一个拷贝（节省内存），JVM只为静态分配一次内存，在加载类的过程中完成静态变量的内存分配，可用类名直接访问（方便），当然也可以通过对象来访问（但是这是不推荐的）。</li>
+<li>好的，是这样的。static修饰对象 可以全局使用，修饰方法可以不依赖于对象，修饰类，也不用依赖与他的对象，也可以被其他的类直接使用，或者自己进行初始化。</li>
+<li><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2></li>
+<li>嵌套类：内部类和静态内部类</li>
+<li>内部类属于外部类的成员，必须依赖与外部对象来实现，静态内部类，不依赖，可以自己单独实现。 </li>
+<li>static 的修饰 变量，类，方法，代码块。 共性全局性。变量的话也就是全剧唯一性，会出现多个饮用，但不会出现多个存储。<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2></li>
+<li><a href="https://blog.csdn.net/fengyuzhengfan/article/details/38082999（static）" target="_blank" rel="noopener">https://blog.csdn.net/fengyuzhengfan/article/details/38082999（static）</a></li>
+<li><a href="https://docs.oracle.com/javase/tutorial/java/javaOO/nested.html（嵌套类）" target="_blank" rel="noopener">https://docs.oracle.com/javase/tutorial/java/javaOO/nested.html（嵌套类）</a></li>
+<li><a href="https://blog.csdn.net/zero_and_one/article/details/53167372（静态内部类的作用）" target="_blank" rel="noopener">https://blog.csdn.net/zero_and_one/article/details/53167372（静态内部类的作用）</a></li>
+</ul>
+
       
 
       
